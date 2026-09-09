@@ -25,10 +25,14 @@ sync: ## Build the virtualenv from uv.lock, without the browser
 # --- the gate ---
 
 .PHONY: lint
-lint: ## Static checks: the linter, the formatter and the playbook
+lint: collections ## Static checks: the linter, the formatter and the playbook
 	@$(UV) run ruff check .
 	@$(UV) run ruff format --check .
 	@$(UV) run ansible-lint IT/ansible
+
+.PHONY: collections
+collections: ## Install the Ansible collections the playbook uses
+	@$(UV) run ansible-galaxy collection install -r IT/ansible/requirements.yml >/dev/null
 
 .PHONY: format
 format: ## Apply the formatter

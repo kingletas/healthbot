@@ -66,5 +66,8 @@ jobs:
       - name: Sync dependencies from uv.lock
         run: uv sync --locked
 
+      - name: Install the collections the playbook uses
+        run: uv run ansible-galaxy collection install -r IT/ansible/requirements.yml
+
       - name: Lint the playbook
         run: uv run ansible-lint IT/ansible/
