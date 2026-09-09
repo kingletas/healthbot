@@ -63,7 +63,7 @@ jobs:
       # The deployable artifact: the playbook's healthbot_wheel_glob points
       # at a downloaded copy of this instead of a wheel stored in the repo
       - name: Upload the wheel artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: healthbot-wheel
           path: dist/*.whl
