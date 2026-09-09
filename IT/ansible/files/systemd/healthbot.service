@@ -1,0 +1,24 @@
+[Unit]
+Description=HealthBot SRE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# A batch job, not a daemon: oneshot makes systemd wait for the run and
+# record its real exit code — Type=simple considered the run finished at
+# fork, so the timer's Persistent= was measuring the wrong thing.
+Type=oneshot
+ExecStart=healthbot
+# What Ansible actually deploys. The unit pointed at /etc/environment for
+# years, so the HB_* overrides never reached the process — the '-' keeps the
+# unit bootable when the file is absent, which is the historical behaviour.
+EnvironmentFile=-/etc/healthbot.env
+
+SyslogIdentifier=healthbot-sre
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+# No [Install]: the timer is the only thing that starts this unit. The old
+# WantedBy=multi-user.target started it at boot as well, on top of the
+# timer's OnBootSec.

@@ -1,0 +1,16 @@
+---
+site_speed:
+    dimensions:
+        - ga:pagePath
+        - ga:deviceCategory
+    metrics:
+        - ga:pageViews
+        - ga:avgTimeOnPage
+        - ga:pageValue
+    ranges:
+        start: today
+        end: today
+    sorts:
+        ga:avgTimeOnPage: DESCENDING
+        ga:pageValue: DESCENDING
+        ga:pageviews: DESCENDING

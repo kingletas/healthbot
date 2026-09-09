@@ -1,0 +1,50 @@
+---
+# The full local environment for HealthBot: everything a real `healthbot`
+# run touches, emulated on one laptop, plus the observability stack.
+#
+#     docker compose up -d --build         # from IT/local/
+#     uv run healthbot-local seed          # provision the AWS emulator
+#     uv run healthbot-local feed &        # keep CloudWatch datapoints fresh
+#     uv run healthbot-local run-env       # prints the end-to-end run command
+#
+# Who plays whom:
+#     MiniStack    -> SSM, Secrets Manager, EC2, CloudWatch, SNS. NOT
+#                     defined here: it is the shared workstation emulator
+#                     at ~/Services/dev-services, on
+#                     172.17.0.1:4566, started once for the machine.
+#     Mattermost   -> Slack (the stub's /slack shim relays chat.postMessage)
+#     stubs :8081  -> New Relic and GA APIs, Slack shim, chaos /control
+#     stubs :8080  -> the storefront (Playwright checkout journey + pings)
+#     included     -> otel-collector, Prometheus, Grafana, Redis from
+#                     ../observability/docker-compose.yml
+#
+# Mattermost: http://localhost:8065 — sre@local.test / SuperSecret-123
+# (bootstrapped by the stub container; alerts land in ~town-square).
+# Everything here is local-only convenience; never reuse anywhere shared.
+
+include:
+    - ../observability/docker-compose.yml
+
+services:
+    mattermost:
+        image: mattermost/mattermost-preview:11.10.1
+        ports:
+            # 127.0.0.1, not 0.0.0.0: the shared dev-services Mattermost binds
+            # 172.17.0.1:8065, and a 0.0.0.0 bind covers that address too, so
+            # the two could not run at once. Loopback keeps them side by side.
+            # This one stays HealthBot's own — the stub container bootstraps it
+            # with specific credentials and a ~town-square channel.
+            - "127.0.0.1:8065:8065"
+        # The preview image bundles its own postgres; first boot takes a
+        # couple of minutes and the stub container retries until it answers.
+
+    stubs:
+        build: ./stubs
+        ports:
+            - "8080:8080" # fake storefront
+            - "8081:8081" # NR + GA + Slack shim + /control
+        environment:
+            MATTERMOST_URL: http://mattermost:8065
+            PUBLIC_API_BASE: http://localhost:8081
+        depends_on:
+            - mattermost

@@ -1,0 +1,21 @@
+---
+ignore: |
+    tests/
+    molecule/
+    .gitlab-ci.yml
+    *molecule.yml
+extends: default
+rules:
+    indentation:
+        # The 2021 files are 4-space and newer ones 2-space; require each file
+        # to be internally consistent rather than reformatting either set
+        spaces: consistent
+        indent-sequences: consistent
+    truthy: disable
+    braces:
+        max-spaces-inside: 1
+        level: error
+    brackets:
+        max-spaces-inside: 1
+        level: error
+    line-length: disable

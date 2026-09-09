@@ -1,0 +1,34 @@
+---
+RDS:
+    namespace: rds
+    label: RDS Stats
+    metrics:
+        - DatabaseConnections
+        - CPUUtilization
+        - Deadlocks
+    dimensions.name: DBClusterIdentifier
+EC2:
+    namespace: ec2
+    label: EC2 Stats
+    metrics:
+        - CPUUtilization
+    dimensions.name: InstanceId
+EC:
+    namespace: ec
+    label: EC Stats
+    metrics:
+        - CPUUtilization
+        - CacheHits
+        - NewConnections
+        - CurrConnections
+        - Evictions
+        - CacheMisses
+    dimensions.name: CacheClusterId
+AmazonMQ:
+    namespace: AmazonMQ
+    label: MQ Stats
+    metrics:
+        - ConnectionCount
+        - SystemCpuUtilization
+        - RabbitMQMemUsed
+    dimensions.name: Broker

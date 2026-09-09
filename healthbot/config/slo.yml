@@ -1,0 +1,41 @@
+---
+# Service level objectives. Targets are per-run good/total ratios over a
+# 30-day window; burn-rate math lives in the Prometheus rules
+# (IT/observability/prometheus/rules/slo.yml), which read these targets from
+# the healthbot_slo_target metric the bot emits.
+#
+# The latency thresholds deliberately restate site.yml's alert values: an
+# objective is a declared contract, not whatever the alert config happens to
+# say this week. If they drift apart, that drift is a decision to surface.
+slos:
+    - name: checkout_availability
+      description: Synthetic checkout probe succeeds
+      target: 0.99
+      signal: is_checkout_up
+      kind: boolean
+
+    - name: canary_availability
+      description: All canary URLs return 200
+      target: 0.995
+      signal: ping_ok
+      kind: boolean
+
+    - name: storefront_latency
+      description: NR browser response under threshold
+      target: 0.99
+      signal: web_response_time
+      kind: below
+      threshold: 3.5
+
+    - name: application_latency
+      description: NR APM response under threshold (ms)
+      target: 0.99
+      signal: app_response_time
+      kind: below
+      threshold: 800
+
+    - name: monitor_availability
+      description: HealthBot itself completed the run
+      target: 0.999
+      signal: run_completed
+      kind: boolean

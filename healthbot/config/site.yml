@@ -1,0 +1,38 @@
+---
+# The shipped example. A deployment points HB_CONFIG_DIR at a directory
+# holding its own site.yml; anything that directory does not carry falls back
+# to this file, so an override usually only needs the values above the
+# alerting block.
+
+base_url: https://store.example.com/
+product_url: example-product.html
+search_term: "blue shirt"
+ping_urls:
+    - example-category.html
+    - checkout
+    - checkout/cart
+    - customer/account/login/
+    - sales/guest/form
+
+# Which New Relic APM application to read. Empty lists every application the
+# key can see and the first is used, which is right for a single-app account.
+new_relic_app_filter: ""
+
+# Shown beside the check results in the Slack message. Leave empty for none.
+logo_url: ""
+logo_alt: ""
+
+test.checkout: true
+test.customer: true
+test.product: true
+test.giftcard: false
+
+### Alert and configuration
+alert_limit: 700
+web_response_alert: 3.5
+app_response_alert: 800
+
+sms_alert_message: "High alert triggered — check Slack for details."
+ga_read_only_scope: "https://www.googleapis.com/auth/analytics.readonly"
+
+secrets_namespace_prefix: "/healthbot-sm/manager/"

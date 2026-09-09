@@ -1,0 +1,97 @@
+---
+- name: Configure an Environment to use HealthBot
+  hosts: all
+  become: true
+  tasks:
+      - name: Install Python
+        ansible.builtin.raw: apt -y update && apt install -y python3 python3-pip
+
+      - name: Set the python3 version
+        ansible.builtin.raw: update-alternatives --install /usr/bin/python python /usr/bin/python3 20
+
+      - name: Refresh cache... install the packages
+        ansible.builtin.apt:
+            update_cache: true
+            autoremove: true
+            pkg: "{{ packages }}"
+            state: present
+
+      - name: Upload configuration
+        ansible.builtin.copy:
+            backup: true
+            src: jail.local
+            dest: /etc/fail2ban/
+            mode: "u=rw,g=r,o=r"
+
+      - name: Start service if not started
+        ansible.builtin.service:
+            name: fail2ban
+            state: restarted
+            enabled: true
+
+      - name: Locate the built wheel on the control machine
+        ansible.builtin.set_fact:
+            healthbot_wheel_src: >-
+                {{ lookup('ansible.builtin.fileglob', healthbot_wheel_glob, wantlist=True)
+                   | sort | last | default('') }}
+
+      - name: Refuse to deploy without a wheel
+        ansible.builtin.assert:
+            that: healthbot_wheel_src | length > 0
+            fail_msg: "No wheel matches {{ healthbot_wheel_glob }} — run 'uv build' first"
+
+      - name: Copy the HealthBot app
+        ansible.builtin.copy:
+            src: "{{ healthbot_wheel_src }}"
+            dest: "{{ healthbot_tmp_file }}"
+            mode: "u=rw,g=r,o=r"
+
+      # Install the app
+      - name: Install the HealthBot app
+        ansible.builtin.pip:
+            name: "file://{{  healthbot_tmp_file }}"
+
+      # Rendered from group_vars rather than copied from a committed file —
+      # the env file is configuration, not a secret, and belongs in vars
+      - name: Render the environment file
+        ansible.builtin.template:
+            src: "{{ service_name | lower }}.env.j2"
+            dest: "/etc/{{ service_name | lower }}.env"
+            mode: "0600"
+
+      - name: Copy the systemd service and timer
+        ansible.builtin.copy:
+            src: "systemd/{{ service_name | lower }}.{{ item }}"
+            dest: "{{ system_dir }}/{{ service_name | lower }}.{{ item }}"
+            mode: "u=rw,g=r,o=r"
+        loop: "{{ service_names }}"
+
+      # Only the timer is enabled: the service unit carries no [Install]
+      # section, so it is started by the timer and nothing else.
+      - name: Enable the HealthBot timer
+        ansible.builtin.systemd:
+            name: "{{ service_name | lower }}.timer"
+            state: started
+            enabled: true
+            daemon_reload: true
+
+      - name: Set the hostname using systemd
+        ansible.builtin.hostname:
+            name: "{{ service_name | lower }}-sre"
+            use: systemd
+
+      - name: Set timezone to CST6CDT (America/Chicago)
+        community.general.timezone:
+            name: CST6CDT
+
+      - name: Clean up tmp files
+        ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+        loop:
+            - "{{ healthbot_tmp_file }}"
+
+      - name: Cleanup packages
+        ansible.builtin.apt:
+            autoremove: true
+            autoclean: true

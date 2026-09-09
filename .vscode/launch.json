@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "healthbot: sync the environment",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uv",
+            "args": ["sync"]
+        },
+        {
+            "name": "healthbot: run one check cycle",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "healthbot.healthbot",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "healthbot: the unit suite",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["-q"],
+            "console": "integratedTerminal"
+        }
+    ]
+}

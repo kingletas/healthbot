@@ -1,0 +1,5 @@
+---
+# Only header.message is read. The per-source logos that used to sit here
+# were never looked up; the message logo is site.yml's logo_url.
+
+header.message: "I am HealthBot :robot_face: with your SRE check."

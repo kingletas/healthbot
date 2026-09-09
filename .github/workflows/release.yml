@@ -1,0 +1,77 @@
+name: Release
+
+# Tagging is the whole trigger: `git tag v1.2.3 && git push --tags` checks the
+# changelog has a section for it, then publishes a GitHub Release whose body is
+# that section.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without the leading v (e.g. 1.2.3)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Work out which version this is
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          # A release with no notes is one nobody can read, so this stops here
+          # rather than publishing an empty body.
+          packaging/release-notes.sh "$version" > /dev/null
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # A release nobody proved is a release nobody should trust: build the
+      # wheel from the tagged commit, install it into a clean environment, and
+      # check the console scripts the deploy relies on actually resolve.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Build and install the wheel from this tag
+        run: |
+          uv build
+          uv venv /tmp/release-check
+          VIRTUAL_ENV=/tmp/release-check uv pip install dist/healthbot-*.whl
+          for script in healthbot healthbot-dora healthbot-demo healthbot-local; do
+            test -x "/tmp/release-check/bin/$script" || {
+              echo "the wheel does not provide $script" >&2
+              exit 1
+            }
+          done
+
+      - name: Attach the wheel to the release
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthbot-wheel
+          path: dist/*.whl
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.pick.outputs.version }}"
+          packaging/release-notes.sh "$version" > notes.md
+          if gh release view "v${version}" >/dev/null 2>&1; then
+            echo "v${version} exists: updating its notes"
+            gh release edit "v${version}" --title "healthbot ${version}" --notes-file notes.md
+          else
+            gh release create "v${version}" --target "$GITHUB_SHA" \
+              --title "healthbot ${version}" --notes-file notes.md
+          fi

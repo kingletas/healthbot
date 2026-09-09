@@ -1,0 +1,99 @@
+[{
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "{{ header  }}",
+        "emoji": true
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {% if logo_url %}
+        {
+          "type": "image",
+          "image_url": "{{ logo_url }}",
+          "alt_text": "{{ logo_alt }}"
+        },
+        {% endif %}
+        {
+          "type": "mrkdwn",
+          {% if is_checkout_up %}
+          "text": ":white_check_mark: Checkout is up and running."
+          {% else %}
+          "text": ":small_red_triangle_down: Checkout may be down"
+          {% endif %}
+        },
+        {
+          "type": "mrkdwn",
+          {% if ping_ok %}
+          "text": ":white_check_mark: All configured URLs are running"
+          {% else %}
+          "text": ":small_red_triangle_down: Some pings didn't complete"
+          {% endif %}
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "text": "*User flow Stats*:",
+        "type": "mrkdwn"
+      },
+      "fields": [{
+          "type": "mrkdwn",
+          "text": "Google Analytics: "
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*{{ ga_active_users }}* active users"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "New Relic APM: "
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*{{ app_response_time }}ms* Response time\n*{{ app_throughput }}* Transactions\n**{{ app_apdex_score }}** apdex score"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "New Relic Browser: "
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*{{ web_response_time }}s* Response time\n*{{ web_throughput }}* Transactions\n**{{ web_apdex_score }}** apdex score"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Nerd Stats*"
+      }
+    }
+    {% for class_key, metrics in aws_metrics.items() %}
+    ,
+    {
+      "type": "section",
+      "text": {
+        "text": "*{{ class_key | upper }}*:",
+        "type": "mrkdwn"
+      },
+      "fields": [
+      {% for metric, value in metrics.items() %}
+        {% if not loop.first %},{% endif %}
+        {
+          "type": "mrkdwn",
+          "text": "{{ metric }}"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*{{ value }}*"
+        }
+      {% endfor %}
+      ]
+    }
+    {% endfor %}
+]
