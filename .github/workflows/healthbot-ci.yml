@@ -19,6 +19,13 @@ on:
       - "uv.lock"
       - ".github/workflows/healthbot-ci.yml"
 
+# One run per branch. A push that supersedes another cancels it rather than
+# paying for an answer nobody will read — these are metered while the
+# repository is private.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   python:
     name: ruff · pytest · build (python 3.12)

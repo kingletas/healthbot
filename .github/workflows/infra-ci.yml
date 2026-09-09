@@ -13,6 +13,13 @@ on:
       - "IT/**"
       - ".github/workflows/infra-ci.yml"
 
+# One run per branch. A push that supersedes another cancels it rather than
+# paying for an answer nobody will read — these are metered while the
+# repository is private.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   terraform:
     name: terraform fmt · validate
