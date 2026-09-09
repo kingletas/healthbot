@@ -47,9 +47,12 @@ test: ## The unit suite. Integration is a separate target because it needs the s
 integration: ## The nine tests that drive the IT/local stack. Needs `make up` and `make seed`
 	@$(UV) run pytest -q -m integration
 
+# Tracked HCL only: -recursive walks into a developer's own gitignored
+# terraform.tfvars, so the gate failed on the formatting of a file that is
+# never committed and holds real credentials.
 .PHONY: terraform
 terraform: ## Format and validate the infrastructure, with no credentials and no state
-	@cd $(ROOT_DIR)/IT/terraform && terraform fmt -check -recursive
+	@cd $(ROOT_DIR)/IT/terraform && terraform fmt -check $$(git ls-files '*.tf' | sed 's|^IT/terraform/||')
 	@cd $(ROOT_DIR)/IT/terraform && terraform init -backend=false -input=false >/dev/null
 	@cd $(ROOT_DIR)/IT/terraform && terraform validate
 

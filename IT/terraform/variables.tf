@@ -172,8 +172,8 @@ variable "twilio_account" {
   type        = string
   sensitive   = true
 }
-variable "ga_view_id" {
-  description = "GA View ID to get the data from"
+variable "ga_property_id" {
+  description = "GA4 property to read realtime active users from, numeric or properties/<id>"
   type        = string
   sensitive   = true
 }

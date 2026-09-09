@@ -79,7 +79,7 @@ resource "aws_secretsmanager_secret_version" "this" {
     slack_token         = var.slack_token
     king_slack_token    = var.king_slack_token
     user_slack_token    = var.user_slack_token
-    view_ids            = var.ga_view_id
+    ga_property_id      = var.ga_property_id
     ga_auth_secrets     = base64encode(file(pathexpand(var.secrets_path)))
     new_relic_api       = var.new_relic_api
   })
