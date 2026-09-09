@@ -50,6 +50,29 @@ first release's notes.
 
 ### Fixed
 
+- **The Google Analytics check reads GA4.** It had been calling Universal
+  Analytics — `analytics/v3`, `rt:activeUsers`, a `ga:` view id — which stopped
+  serving data in July 2023 and was withdrawn a year later, so the metric could
+  only ever come back empty. It now calls the GA4 Data API's
+  `runRealtimeReport`. **The secret's `view_ids` becomes `ga_property_id`**: a
+  GA4 property, numeric or `properties/<id>`.
+- **A Google outage costs one metric instead of the whole run.** The check
+  raised, and nothing caught it before `main()`, so an API error took the
+  checkout and canary results down with it. It returns `None` now — the
+  "cannot tell" signal the alerting and the SLOs already understand.
+- **The playbook installs the browser the checkout check drives.** Nothing ever
+  did, so on a fresh host the browser failed to launch, the check caught it,
+  and checkout was reported down on every run forever.
+- **The bot no longer runs as root.** An unprivileged `healthbot` account owns
+  the run, with the browser in a shared `/opt/ms-playwright` it can read.
+- **Logs and failure evidence leave the installed package.** They were written
+  inside `site-packages`, which a read-only install refuses and nobody thinks
+  to look in. `HB_LOG_DIR` decides now, and systemd's `LogsDirectory` gives the
+  deployed unit `/var/log/healthbot`.
+- **A slow run is no longer killed and recorded as a failure.** `Type=oneshot`
+  inherits a 90-second start timeout; a checkout journey plus four API calls
+  can outrun it, and the site takes the blame for the monitor. It is 300s.
+
 - **A crashed run doesn't report success any more.** A total failure exited 0, and
   systemd recorded a clean run every five minutes for a bot that never checked
   anything. It exits non-zero now, and charges only the monitor objective — a run

@@ -21,8 +21,8 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
 # Local imports
-from healthbot import log_d
 from healthbot.api.logs import logger
+from healthbot.settings import get_settings
 
 DEFAULT_SEARCH_TERM = "blue shirt"
 STEP_TIMEOUT_MS = 15_000
@@ -33,7 +33,9 @@ def validate_checkout(base_url: str, search_term: str = None, evidence_dir: str 
     # silently skip the check — "cannot tell" pages.
     try:
         return _validate_checkout(
-            base_url, search_term or DEFAULT_SEARCH_TERM, evidence_dir or log_d
+            base_url,
+            search_term or DEFAULT_SEARCH_TERM,
+            evidence_dir or get_settings().log_dir,
         )
     except Exception as err:
         logger.exception(f"checkout validation could not run: {err!r}")

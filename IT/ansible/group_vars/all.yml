@@ -26,6 +26,11 @@ performance_tags:
 
 ansible_user: ubuntu
 
+# The unpriviliged account the timer runs the bot as, and where the Playwright
+# browser is installed so that account can read it.
+healthbot_user: healthbot
+playwright_browsers_path: /opt/ms-playwright
+
 system_dir: /lib/systemd/system/
 service_name: HealthBot
 # version-independent: the tmp name must not encode a version that drifts
@@ -65,6 +70,10 @@ healthbot_env:
     HB_DB_IDENTIFIER: "example-rds-cluster"
     HB_SECRETS_NAME: "healthbot-example-secret"
     HB_AWS_PROFILE: "default"
+    # systemd's LogsDirectory=healthbot creates this and owns it to the
+    # service account. Without it the app writes inside its own site-packages.
+    HB_LOG_DIR: "/var/log/healthbot"
+    PLAYWRIGHT_BROWSERS_PATH: "/opt/ms-playwright"
     # Telemetry stays off until a collector endpoint exists for this host;
     # set HB_OTEL_ENABLED: "1" and OTEL_EXPORTER_OTLP_ENDPOINT to enable
     HB_OTEL_ENABLED: "0"

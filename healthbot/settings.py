@@ -8,7 +8,7 @@ contracts, not per-host runtime knobs.
 """
 
 # Standard imports
-from os import path
+from os import environ, path
 
 # Third party imports
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     # Tri-state: True/False forces, None defers to whether an OTLP endpoint
     # is configured
     otel_enabled: bool | None = None
+
+    # Where run logs and failed-checkout evidence are written. The default is
+    # outside the installed package: a wheel install put both inside
+    # site-packages, which a read-only install refuses and nobody thinks to
+    # look in. The systemd unit points this at its own LogsDirectory.
+    log_dir: str = path.join(
+        environ.get("XDG_STATE_HOME") or path.expanduser("~/.local/state"),
+        "healthbot",
+        "logs",
+    )
 
     # DORA event journal and the repo lead time is computed against
     dora_events: str = path.expanduser("~/.local/share/healthbot/dora-events.jsonl")

@@ -13,7 +13,7 @@ HEALTHY = {
 
 
 class FakeParamStore:
-    def getParameter(self, param, **kwargs):
+    def get_parameter(self, param, **kwargs):
         return "healthbot-secret" if param.endswith("secret_name") else "value"
 
 

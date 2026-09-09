@@ -63,9 +63,8 @@ def can_notify(current: dict) -> bool:
 
 
 def send_notifications(secrets: dict, notifications: dict) -> None:
-    """
-    Sends a text message
-    """
+    """Sends whichever notifications the run asked for and has credentials for."""
+    # SMS
     if "twilio_token" in secrets and notifications.get("send_sms"):
         message = TwilioMessage(
             to=secrets.get("twilio_to"),
@@ -80,9 +79,7 @@ def send_notifications(secrets: dict, notifications: dict) -> None:
         )
         twlio_mgr.send(message)
 
-    """
-    Sends an alert to slack
-    """
+    # Slack
     if "slack_token" in secrets and notifications.get("send_slack"):
         slack_message = SlackMessage(
             message_data=notifications.get("message_data"),
@@ -92,9 +89,7 @@ def send_notifications(secrets: dict, notifications: dict) -> None:
         slack_mgr = SlackNotificationAware(logger, token=secrets.get("slack_token"))
         slack_mgr.send(slack_message)
 
-    """
-    Sends an alert to SNS
-    """
+    # SNS
     if "topic_arn" in secrets and notifications.get("send_sns"):
         sns_message = SnsMessage(
             secrets.get("topic_arn"),

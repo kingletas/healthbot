@@ -23,9 +23,9 @@ from healthbot.settings import get_settings
 
 def get_message_data(secrets: dict, hb_prefix: str, param_store, site_config: dict) -> dict:
 
-    environment: str = param_store.getParameter(f"{hb_prefix}environment")
-    tag_name: str = param_store.getParameter(f"{hb_prefix}tag_name")
-    db_identifier: str = param_store.getParameter(f"{hb_prefix}db_identifier")
+    environment: str = param_store.get_parameter(f"{hb_prefix}environment")
+    tag_name: str = param_store.get_parameter(f"{hb_prefix}tag_name")
+    db_identifier: str = param_store.get_parameter(f"{hb_prefix}db_identifier")
 
     scope = site_config.get("ga_read_only_scope")
 
@@ -43,17 +43,14 @@ def get_message_data(secrets: dict, hb_prefix: str, param_store, site_config: di
             tag_name=tag_name, environment=environment, db_cluster_identifier=db_identifier
         )
 
-    with telemetry.check_span("google_analytics"):
+    with telemetry.check_span("google_analytics") as check:
         ga_data = {
-            "ga_active_users": (
-                GaCheck(
-                    json_secret=ga_auth_secrets,
-                    api_name="analytics",
-                    api_version="v3",
-                    scopes=[scope],
-                )
-            ).get_active_users(view_ids=secrets.get("view_ids"))
+            "ga_active_users": GaCheck(
+                json_secret=ga_auth_secrets, scopes=[scope]
+            ).get_active_users(property_id=secrets.get("ga_property_id"))
         }
+        if ga_data["ga_active_users"] is None:
+            check.set_status("fail")
 
     with telemetry.check_span("checkout") as check:
         is_checkout_up = validate_checkout(
@@ -97,7 +94,7 @@ def main() -> int:
                 if hb_prefix is None:
                     hb_prefix = site_config.get("secrets_namespace_prefix")
 
-                secret_name = param_store.getParameter(f"{hb_prefix}secret_name")
+                secret_name = param_store.get_parameter(f"{hb_prefix}secret_name")
                 secrets = (SecretsAwareHelper()).get_secret(name=secret_name)
                 message_data = get_message_data(
                     secrets=secrets,

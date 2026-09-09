@@ -8,7 +8,7 @@ Every non-AWS dependency of a HealthBot run, in one process:
            answers every ping URL
     :8081  /nr/...     the New Relic v2 API subset checks/nr.py calls
            /ga/...     GA discovery document, token endpoint and the
-                       realtime data endpoint checks/ga.py calls
+                       GA4 runRealtimeReport endpoint checks/ga.py calls
            /slack/...  a chat.postMessage shim that relays the bot's real
                        Slack blocks into Mattermost
            /control    chaos switches (checkout_down, pings_down, ga_surge,
@@ -189,54 +189,59 @@ async def nr_applications(request: web.Request) -> web.Response:
 
 
 # --------------------------------------------------------------------------
-# Google Analytics stub (:8081/ga) — discovery + token + realtime endpoint
+# Google Analytics stub (:8081/ga) — GA4 discovery + token + runRealtimeReport
 # --------------------------------------------------------------------------
 
 
 async def ga_discovery(request: web.Request) -> web.Response:
-    # Just enough discovery document for data().realtime().get(); rootUrl is
-    # the published base so the generated client calls back into this stub.
+    # Just enough of the GA4 Data API discovery document for
+    # properties().runRealtimeReport(); rootUrl is the published base so the
+    # generated client calls back into this stub rather than Google.
     return web.json_response(
         {
             "kind": "discovery#restDescription",
-            "id": "analytics:v3",
-            "name": "analytics",
-            "version": "v3",
+            "id": "analyticsdata:v1beta",
+            "name": "analyticsdata",
+            "version": "v1beta",
             "rootUrl": f"{PUBLIC_API_BASE}/",
-            "servicePath": "ga/analytics/v3/",
-            "baseUrl": f"{PUBLIC_API_BASE}/ga/analytics/v3/",
+            "servicePath": "ga/analyticsdata/v1beta/",
+            "baseUrl": f"{PUBLIC_API_BASE}/ga/analyticsdata/v1beta/",
             "protocol": "rest",
             "resources": {
-                "data": {
-                    "resources": {
-                        "realtime": {
-                            "methods": {
-                                "get": {
-                                    "id": "analytics.data.realtime.get",
-                                    "path": "data/realtime",
-                                    "httpMethod": "GET",
-                                    "parameters": {
-                                        "ids": {
-                                            "type": "string",
-                                            "required": True,
-                                            "location": "query",
-                                        },
-                                        "metrics": {
-                                            "type": "string",
-                                            "required": True,
-                                            "location": "query",
-                                        },
-                                        "dimensions": {"type": "string", "location": "query"},
-                                    },
-                                    "parameterOrder": ["ids", "metrics"],
-                                    "response": {"$ref": "RealtimeData"},
+                "properties": {
+                    "methods": {
+                        "runRealtimeReport": {
+                            "id": "analyticsdata.properties.runRealtimeReport",
+                            # +property is the API's own reserved-expansion
+                            # template: the value is properties/123, and the
+                            # slash inside it must not be percent-encoded.
+                            "path": "{+property}:runRealtimeReport",
+                            "httpMethod": "POST",
+                            "parameters": {
+                                "property": {
+                                    "type": "string",
+                                    "required": True,
+                                    "location": "path",
+                                    "pattern": "^properties/[^/]+$",
                                 }
-                            }
+                            },
+                            "parameterOrder": ["property"],
+                            "request": {"$ref": "RunRealtimeReportRequest"},
+                            "response": {"$ref": "RunRealtimeReportResponse"},
                         }
                     }
                 }
             },
-            "schemas": {"RealtimeData": {"id": "RealtimeData", "type": "object"}},
+            "schemas": {
+                "RunRealtimeReportRequest": {
+                    "id": "RunRealtimeReportRequest",
+                    "type": "object",
+                },
+                "RunRealtimeReportResponse": {
+                    "id": "RunRealtimeReportResponse",
+                    "type": "object",
+                },
+            },
         }
     )
 
@@ -250,12 +255,15 @@ async def ga_token(request: web.Request) -> web.Response:
 
 
 async def ga_realtime(request: web.Request) -> web.Response:
+    # The GA4 shape: one row of metric values, not a totals object. With no
+    # dimensions requested that single row is the whole report.
     active = "934" if STATE["ga_surge"] else "137"
     return web.json_response(
         {
-            "kind": "analytics#realtimeData",
-            "totalResults": 1,
-            "totalsForAllResults": {"rt:activeUsers": active},
+            "kind": "analyticsData#runRealtimeReport",
+            "metricHeaders": [{"name": "activeUsers", "type": "TYPE_INTEGER"}],
+            "rows": [{"metricValues": [{"value": active}]}],
+            "rowCount": 1,
         }
     )
 
@@ -520,7 +528,9 @@ def build_api() -> web.Application:
     app.router.add_get("/nr/v2/applications.json", nr_applications)
     app.router.add_get("/ga/discovery", ga_discovery)
     app.router.add_post("/ga/token", ga_token)
-    app.router.add_get("/ga/analytics/v3/data/realtime", ga_realtime)
+    app.router.add_post(
+        "/ga/analyticsdata/v1beta/properties/{property_id}:runRealtimeReport", ga_realtime
+    )
     app.router.add_post("/slack/chat.postMessage", slack_post_message)
     app.on_startup.append(start_bootstrap)
     return app

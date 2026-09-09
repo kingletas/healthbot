@@ -52,7 +52,7 @@ Each seam is one `HB_*` variable, validated in `healthbot/settings.py`, and each
 | `HB_CONFIG_DIR` | `site.yml` (base URL, ping URLs) | override dir with per-file fallback to the packaged config |
 | `HB_NR_API_URL` | New Relic | instance override of `newrelic_api`'s `Resource.URL` class attribute |
 | `HB_SLACK_API_URL` | Slack | `WebClient(base_url=…)` — the shim relays `chat.postMessage` into Mattermost |
-| `HB_GA_DISCOVERY_URL` | Google Analytics | `discoveryServiceUrl` + `static_discovery=False`; the token endpoint follows from `token_uri` inside the seeded service-account JSON |
+| `HB_GA_DISCOVERY_URL` | Google Analytics (GA4 Data API `v1beta`) | `discoveryServiceUrl` + `static_discovery=False`; the token endpoint follows from `token_uri` inside the seeded service-account JSON |
 
 The seeded GA service account carries a throwaway RSA key generated fresh on every `seed` — google-auth signs a real JWT with it and the stub accepts anything well-formed. Twilio is deliberately absent from the local secret blob: its SDK has no endpoint seam, so the SMS branch stays skipped locally and is covered by the unit suite.
 

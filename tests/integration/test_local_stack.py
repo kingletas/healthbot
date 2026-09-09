@@ -102,7 +102,7 @@ def test_seeded_aws_is_readable_through_the_bots_own_helpers():
 
     param_store = ParameterStoreAwareHelper()
     prefix = "/healthbot-sm/manager/"
-    secret_name = param_store.getParameter(f"{prefix}secret_name")
+    secret_name = param_store.get_parameter(f"{prefix}secret_name")
     assert secret_name == "healthbot-local"
 
     secrets = SecretsAwareHelper().get_secret(name=secret_name)
@@ -159,8 +159,45 @@ def test_staged_outage_pages_into_mattermost():
     # own fallback placeholder contains "HealthBot", which once let a broken
     # relay pass this test.
     assert "SRE check" in newest["message"]
-    assert "active users" in newest["message"]
     assert "Checkout" in newest["message"]
+    # The surge count itself, not just the words around it: `*None* active
+    # users` also contains "active users", so the loose assertion passed
+    # while Universal Analytics was returning nothing at all.
+    assert "*934* active users" in newest["message"]
+
+
+def test_ga4_realtime_report_is_read_through_the_real_client():
+    """
+    The GA4 Data API path, end to end: discovery document, signed JWT, the
+    runRealtimeReport POST and the response parse — all through the same
+    googleapiclient the deployed bot uses.
+
+    Both values are asserted because reaching the endpoint is not the same as
+    parsing it. The withdrawn Universal Analytics call returned its total under
+    a different key entirely, so a check that only proved "a number came back"
+    would not have noticed.
+    """
+    import base64
+    import json
+
+    from healthbot.checks.ga import GaCheck
+    from healthbot.helper.ParameterStoreAwareHelper import ParameterStoreAwareHelper
+    from healthbot.helper.SecretsAwareHelper import SecretsAwareHelper
+
+    param_store = ParameterStoreAwareHelper()
+    secret_name = param_store.get_parameter("/healthbot-sm/manager/secret_name")
+    secrets = SecretsAwareHelper().get_secret(name=secret_name)
+    service_account = json.loads(base64.b64decode(secrets["ga_auth_secrets"]).decode("ascii"))
+    check = GaCheck(
+        json_secret=service_account,
+        scopes=["https://www.googleapis.com/auth/analytics.readonly"],
+    )
+
+    control(ga_surge=False)
+    assert check.get_active_users(secrets["ga_property_id"]) == 137
+
+    control(ga_surge=True)
+    assert check.get_active_users(secrets["ga_property_id"]) == 934
 
 
 def test_sns_alert_lands_on_the_local_topic():

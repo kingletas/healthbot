@@ -20,7 +20,7 @@ class ParameterStoreAwareHelper(AwsAware):
         # both __init__s, so the MRO was irrelevant and it worked by accident.
         self.cache = cache or CacheAwareHelper(db=1)
 
-    def getParameter(self, param: str, with_decryption=False, is_sensitive=False):
+    def get_parameter(self, param: str, with_decryption=False, is_sensitive=False):
         # Cache plain configuration, never sensitive values. The old logic
         # was exactly inverted: it persisted only what was flagged sensitive
         # and re-fetched everything else on every run.

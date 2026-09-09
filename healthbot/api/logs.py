@@ -8,7 +8,7 @@ import sys
 from loguru import logger
 
 # Local imports
-from healthbot import log_d
+from healthbot.settings import get_settings
 
 # One console sink and one file sink. Loguru installs a default stderr
 # handler on import, so adding stderr *and* stdout on top of it had journald
@@ -21,6 +21,7 @@ logger.add(
     enqueue=True,
 )
 
+log_d = get_settings().log_dir
 os.makedirs(log_d, exist_ok=True)
 
 log_file = os.path.join(log_d, "healthbot_{time:YYMMDDDD}.log")

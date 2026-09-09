@@ -24,7 +24,7 @@ make up seed    # the local environment, and the data a run expects to find
 | `checks/site.py` | Headless Chromium (Playwright): search → product → add to cart → checkout page. A failure leaves a screenshot, the page HTML and a replayable trace under `logs/` | `is_checkout_up` |
 | `checks/pings.py` | Async sweep of the base URL + `ping_urls` from `site.yml`; a connection failure folds in as status 0 instead of aborting the run | `ping_ok` |
 | `checks/nr.py` | New Relic APM + browser summaries | `app_*`/`web_*` metrics |
-| `checks/ga.py` | GA realtime active users (service account via google-auth) | `ga_active_users` |
+| `checks/ga.py` | GA4 realtime active users — the Data API's `runRealtimeReport`, service account via google-auth. A property that cannot be read is `None`, which alerts rather than passing | `ga_active_users` |
 | `checks/aws.py` | CloudWatch metrics for the tagged EC2 fleet + RDS cluster (newest datapoint, UTC window) | `aws_metrics` |
 
 Alert thresholds live in `healthbot/config/site.yml` — currently `alert_limit: 700` active users, `app_response_alert: 800` ms, `web_response_alert: 3.5` s — and a signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
@@ -52,6 +52,8 @@ Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos swi
 ## Runtime configuration
 
 All `HB_*` environment variables are validated by `healthbot/settings.py` (pydantic-settings): `HB_PARAM_PREFIX` (falls back to `site.yml`'s `secrets_namespace_prefix`), `HB_ENVIRONMENT`, `HB_OTEL_ENABLED`, `HB_DORA_EVENTS`, `HB_DORA_REPO` — plus the local-stack seams `HB_CONFIG_DIR`, `HB_NR_API_URL`, `HB_SLACK_API_URL` and `HB_GA_DISCOVERY_URL`, each a no-op when unset. On a deployed host they arrive via `/etc/healthbot.env`, templated by Ansible from `group_vars`. Run parameters come from SSM Parameter Store (plain values cached in Redis, sensitive ones never), and credentials from Secrets Manager — fetched fresh every run, never cached.
+
+The Secrets Manager blob carries `ga_property_id`: a GA4 property, numeric or `properties/<id>`. It replaced the Universal Analytics view id, which hasn't worked since Google withdrew that API in July 2024.
 
 ## Requirements
 
@@ -134,7 +136,7 @@ CI uploads the same wheel as the `healthbot-wheel` artifact on every build. The 
 cd IT/ansible && ansible-playbook -i inventory playbook.yml
 ```
 
-The playbook installs the wheel, the Playwright browser, fail2ban, the templated `/etc/healthbot.env`, and the systemd pair — the timer (every 5 minutes, with jitter) is the only thing that starts the service. Infrastructure: build the AMI under `IT/packer` (`packer build -var-file=etc/dev.hcl .`), then `IT/terraform` provisions the host, network wiring and KMS key; credentials are seeded into Secrets Manager once and rotated there, never re-applied by Terraform.
+The playbook installs the wheel, the Playwright browser into `/opt/ms-playwright`, fail2ban, an unprivileged `healthbot` service account, the templated `/etc/healthbot.env`, and the systemd pair — the timer (every 5 minutes, with jitter) is the only thing that starts the service. Infrastructure: build the AMI under `IT/packer` (`packer build -var-file=etc/dev.hcl .`), then `IT/terraform` provisions the host, network wiring and KMS key; credentials are seeded into Secrets Manager once and rotated there, never re-applied by Terraform.
 
 ## CI
 

@@ -14,10 +14,28 @@ ExecStart=healthbot
 # unit bootable when the file is absent, which is the historical behaviour.
 EnvironmentFile=-/etc/healthbot.env
 
+# The run drives a browser against a public site. It has no reason to be root,
+# and every reason not to be.
+User=healthbot
+Group=healthbot
+
+# systemd creates /var/log/healthbot owned by User= before the run starts.
+# HB_LOG_DIR in the environment file points the app at it.
+LogsDirectory=healthbot
+LogsDirectoryMode=0750
+
+# A checkout journey plus four API calls can outrun the 90s default, and a
+# killed run is recorded as a failed one — the site blamed for the monitor.
+TimeoutStartSec=300
+
 SyslogIdentifier=healthbot-sre
 
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+RestrictSUIDSGID=true
 
 # No [Install]: the timer is the only thing that starts this unit. The old
 # WantedBy=multi-user.target started it at boot as well, on top of the

@@ -100,12 +100,12 @@ def test_parameters_cache_plain_values_and_never_sensitive_ones():
     cache = FakeCache()
     helper = ParameterStoreAwareHelper(cache=cache)
 
-    assert helper.getParameter("/hb/environment") == "stage"
+    assert helper.get_parameter("/hb/environment") == "stage"
     assert cache.store["/hb/environment"] == "stage"
 
     # Regression for the inversion: sensitive values were the only thing the
     # old code persisted to Redis
-    assert helper.getParameter("/hb/token", with_decryption=True, is_sensitive=True) == "hunter2"
+    assert helper.get_parameter("/hb/token", with_decryption=True, is_sensitive=True) == "hunter2"
     assert "/hb/token" not in cache.store
 
 

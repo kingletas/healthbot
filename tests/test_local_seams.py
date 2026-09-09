@@ -160,7 +160,7 @@ def test_ga_discovery_override_disables_static_discovery(monkeypatch):
     )
     monkeypatch.setattr(ga, "build", lambda *args, **kwargs: captured.update(kwargs) or "service")
 
-    ga.GaCheck(api_name="analytics", api_version="v3", scopes=["s"], json_secret={})
+    ga.GaCheck(scopes=["s"], json_secret={})
     assert captured["discoveryServiceUrl"] == "http://localhost:8081/ga/discovery"
     # Without this the bundled static document's rootUrl wins and the
     # override silently does nothing.
@@ -178,7 +178,7 @@ def test_ga_discovery_unset_builds_plain(monkeypatch):
     )
     monkeypatch.setattr(ga, "build", lambda *args, **kwargs: captured.update(kwargs) or "service")
 
-    ga.GaCheck(api_name="analytics", api_version="v3", scopes=["s"], json_secret={})
+    ga.GaCheck(scopes=["s"], json_secret={})
     assert "discoveryServiceUrl" not in captured
     assert "static_discovery" not in captured
 
@@ -250,9 +250,13 @@ def test_seed_provisions_everything_the_bot_reads(monkeypatch):
     blob = json.loads(secret["SecretString"])
     # Exactly the keys main() reads, and none of the Twilio ones — the SDK
     # has no endpoint seam, so the SMS branch must stay skipped locally.
-    assert {"slack_token", "slack_channel", "new_relic_api", "ga_auth_secrets", "view_ids"} <= set(
-        blob
-    )
+    assert {
+        "slack_token",
+        "slack_channel",
+        "new_relic_api",
+        "ga_auth_secrets",
+        "ga_property_id",
+    } <= set(blob)
     assert not any(key.startswith("twilio") for key in blob)
 
     # The instance is discoverable by the exact tag filters checks/aws.py uses

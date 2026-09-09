@@ -176,7 +176,7 @@ def seed_secret(topic_arn: str) -> None:
             "slack_channel": "town-square",
             "new_relic_api": "local-dev-nr-key",
             "ga_auth_secrets": base64.b64encode(ga_json.encode("ascii")).decode("ascii"),
-            "view_ids": "ga:00000001",
+            "ga_property_id": "000000001",
             "topic_arn": topic_arn,
             # Deliberately no twilio_* keys: the Twilio SDK has no endpoint
             # seam, so the SMS branch stays skipped locally and is covered by
