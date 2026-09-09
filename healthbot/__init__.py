@@ -8,7 +8,6 @@ __app_name__ = "healthbot"
 
 main_path = path.dirname(__file__)
 config_d = path.join(main_path, "config")
-templates_d = path.join(main_path, "templates")
 
 
 # Appended to the titled environment to form the EC2 tag:Environment value —

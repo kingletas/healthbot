@@ -71,8 +71,24 @@ def control(**switches) -> None:
 @pytest.fixture(autouse=True)
 def calm_state():
     control(checkout_down=False, pings_down=False, ga_surge=False, nr_slow=False)
+    clear_alert_state()
     yield
     control(checkout_down=False, pings_down=False, ga_surge=False, nr_slow=False)
+    clear_alert_state()
+
+
+def clear_alert_state() -> None:
+    """
+    Forget that anything was alerted about.
+
+    The gate suppresses a repeat of the same condition for fifteen minutes,
+    which is the point of it — and it would make this suite pass once and then
+    quietly stop asserting anything on the second run of the afternoon.
+    """
+    from healthbot.alerting import ALERT_STATE_DB, STATE_KEY
+    from healthbot.helper.CacheAwareHelper import CacheAwareHelper
+
+    CacheAwareHelper(db=ALERT_STATE_DB).delete(STATE_KEY)
 
 
 def mattermost_posts() -> list:

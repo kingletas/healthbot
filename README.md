@@ -29,6 +29,8 @@ make up seed    # the local environment, and the data a run expects to find
 
 Alert thresholds live in `healthbot/config/site.yml` — currently `alert_limit: 700` active users, `app_response_alert: 800` ms, `web_response_alert: 3.5` s — and a signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
 
+A standing alert backs off rather than repeating: 15 minutes, then 30, then hourly, so an outage lasting an afternoon doesn't send fifty identical messages. A change in *what* is failing always speaks immediately, recovery needs two consecutive clean runs before it counts, and a gate that can't read its own state sends rather than suppressing.
+
 ## SLOs, telemetry, DORA
 
 Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5%, both latencies 99%, monitor availability 99.9%). Every run emits per-SLI good/bad events plus a heartbeat through OpenTelemetry when `HB_OTEL_ENABLED=1` and an `OTEL_EXPORTER_OTLP_ENDPOINT` are set; without them the telemetry layer is a no-op and nothing changes. Prometheus computes multi-window burn rates from the emitted targets — page at 14.4×, ticket at 6× — plus `HealthBotSilent`, the dead-man's switch that fires when the heartbeat stops.

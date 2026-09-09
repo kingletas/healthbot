@@ -32,6 +32,7 @@ first release's notes.
 
 ### Changed
 
+- **Jinja2 is no longer a runtime dependency.** Nothing templated anything once the Slack message stopped being a template.
 - **Python 3.8 to 3.12, Poetry to uv, black/pylint/tox to ruff.** `uv sync`
   builds the environment from `uv.lock`; `make check` is the whole gate.
 - **Selenium to Playwright.** The checkout check doesn't need geckodriver or a distro Firefox any more — `playwright install chromium` is the whole browser setup.
@@ -49,6 +50,29 @@ first release's notes.
   a silent default.
 
 ### Fixed
+
+- **A standing alert backs off instead of repeating every five minutes.** An
+  outage that lasted an afternoon sent the same message about fifty times, on
+  Slack, SMS and SNS. Repeats now go out after 15 minutes, 30, then hourly —
+  six messages in four hours rather than forty-nine.
+
+  Three rules make that safe to add. **A change in what is wrong always
+  speaks**, so checkout going down during a traffic surge is a new alert and
+  not a suppressed repeat. **Recovery has to hold**: two consecutive clean
+  runs, because a threshold resting on its limit flaps and a backoff that
+  resets on the first good run never engages. And **a gate that cannot read
+  its own state sends anyway** — the failure mode has to be a duplicate
+  message, never a silent outage.
+- **Redis is a cache again, not a dependency.** The client carried no timeout,
+  so a hung Redis hung a five-minute batch job — the exact failure
+  `REQUEST_TIMEOUT_SECONDS` exists to prevent for HTTP. It has connect and
+  operation timeouts, and a read that fails is a miss: every caller has a
+  source of truth behind it, so the run costs a round trip instead of dying.
+- **The Slack message is built as data and serialised once.** It was a Jinja
+  template emitting JSON by hand, which is what produced the trailing commas.
+  `json.dumps` on a list of blocks makes the whole class of bug impossible.
+  A metric that could not be collected now reads `_not collected_` rather than
+  rendering blank — `*ms* Response time` looked like a measurement of nothing.
 
 - **The Google Analytics check reads GA4.** It had been calling Universal
   Analytics — `analytics/v3`, `rt:activeUsers`, a `ga:` view id — which stopped

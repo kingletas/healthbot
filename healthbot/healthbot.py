@@ -6,6 +6,7 @@ import json
 import sys
 
 from healthbot import slo, telemetry
+from healthbot.alerting import AlertGate, failing_signals
 from healthbot.api.logs import logger
 from healthbot.checks.aws import get_metric_data
 from healthbot.checks.ga import GaCheck
@@ -17,7 +18,11 @@ from healthbot.checks.site import validate_checkout
 from healthbot.helper.ParameterStoreAwareHelper import ParameterStoreAwareHelper
 from healthbot.helper.SecretsAwareHelper import SecretsAwareHelper
 from healthbot.helper.UtilsHelper import get_base_url, get_config, get_header
-from healthbot.notifications.NotificationManager import can_notify, send_notifications
+from healthbot.notifications.NotificationManager import (
+    alert_thresholds,
+    can_notify,
+    send_notifications,
+)
 from healthbot.settings import get_settings
 
 
@@ -106,12 +111,20 @@ def main() -> int:
                 telemetry.record_business_metrics(message_data)
                 telemetry.record_slo_events(slo.evaluate_run(message_data, run_completed=True))
 
+                # can_notify says this run is bad; the gate says whether
+                # anybody needs telling again. A standing outage used to send
+                # the same message every five minutes on all three channels.
+                bad_run = can_notify(message_data)
+                failing = failing_signals(message_data, alert_thresholds()) if bad_run else ()
+                speak = AlertGate().should_notify(failing)
+                checkout_down = message_data.get("is_checkout_up") is False
+
                 notification_data = {
-                    "send_slack": can_notify(message_data),
+                    "send_slack": speak,
                     "message_data": message_data,
-                    "send_sms": (message_data.get("is_checkout_up") is False),
+                    "send_sms": speak and checkout_down,
                     "sms_message": site_config.get("sms_alert_message"),
-                    "send_sns": (message_data.get("is_checkout_up") is False),
+                    "send_sns": speak and checkout_down,
                     "sns_subject": message_data.get("header"),
                     "sns_message": site_config.get("sms_alert_message"),
                     "sns_attributes": {},

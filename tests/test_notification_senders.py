@@ -93,6 +93,45 @@ def test_slack_message_omits_the_logo_when_none_is_configured():
     assert with_logo[1]["elements"][0]["image_url"] == "https://example.com/logo.png"
 
 
+def test_a_metric_that_could_not_be_collected_says_so(monkeypatch):
+    # The template rendered a missing value as an empty string, so a New Relic
+    # outage arrived as "*ms* Response time" — a measurement of nothing rather
+    # than a failure to measure.
+    message = SlackMessage(
+        message_data={
+            "header": "h",
+            "is_checkout_up": True,
+            "ping_ok": True,
+            "aws_metrics": {},
+        },
+        channel="#c",
+    )
+
+    fields = " ".join(f["text"] for f in json.loads(message.message)[2]["fields"])
+    assert fields.count("_not collected_") == 7
+    assert "**" not in fields
+
+
+def test_metric_classes_become_one_section_each():
+    message = SlackMessage(
+        message_data={
+            "header": "h",
+            "is_checkout_up": True,
+            "ping_ok": True,
+            "aws_metrics": {"rds": {"CPUUtilization": 27.0}, "ec2": {"CPUUtilization": 19.0}},
+        },
+        channel="#c",
+    )
+
+    blocks = json.loads(message.message)
+    headings = [b["text"]["text"] for b in blocks[4:]]
+    assert headings == ["*RDS*:", "*EC2*:"]
+    assert blocks[4]["fields"] == [
+        {"type": "mrkdwn", "text": "CPUUtilization"},
+        {"type": "mrkdwn", "text": "*27.0*"},
+    ]
+
+
 def test_slack_sender_posts_blocks_to_the_channel(monkeypatch):
     calls = {}
 
