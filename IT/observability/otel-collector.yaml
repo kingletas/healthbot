@@ -1,0 +1,33 @@
+---
+receivers:
+    otlp:
+        protocols:
+            grpc:
+                endpoint: 0.0.0.0:4317
+            http:
+                endpoint: 0.0.0.0:4318
+
+processors:
+    batch: {}
+
+exporters:
+    prometheus:
+        endpoint: 0.0.0.0:8889
+        # DORA gauges arrive every ~10th run; don't let them go stale between
+        # exports
+        metric_expiration: 10m
+    debug:
+        verbosity: normal
+
+service:
+    pipelines:
+        metrics:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [prometheus]
+        # Traces land in the collector log for now; a Tempo/Jaeger backend is
+        # a one-exporter change here when trace browsing earns its keep
+        traces:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug]

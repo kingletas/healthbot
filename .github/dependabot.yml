@@ -1,0 +1,28 @@
+---
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  # Weekly, not daily. Dependabot's own checks and every pull request it opens
+  # run on Actions minutes while this repository is private, and a project that
+  # does not ship daily learns nothing from being told daily.
+  schedule:
+    interval: weekly
+    day: monday
+  open-pull-requests-limit: 3
+  groups:
+    python-minor-and-patch:
+      # One pull request for the routine bumps instead of one each. A major is
+      # left on its own, because that is the one worth reading.
+      patterns:
+        - "*"
+      update-types:
+        - minor
+        - patch
+- package-ecosystem: github-actions
+  directory: "/"
+  # Nothing was watching the action versions the workflows pin.
+  schedule:
+    interval: weekly
+    day: monday
+  open-pull-requests-limit: 3

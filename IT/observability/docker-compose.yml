@@ -1,0 +1,63 @@
+---
+# Local observability stack for HealthBot: OTLP in, Grafana out.
+#
+#     docker compose up -d
+#     HB_OTEL_ENABLED=1 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
+#         uv run healthbot-demo --interval 15
+#
+# Grafana: http://localhost:3000 (anonymous admin, local only)
+# Prometheus: http://localhost:9090
+services:
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.115.1
+        command: ["--config=/etc/otelcol/config.yaml"]
+        volumes:
+            - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
+        # Every port here binds to loopback. This is a stack for one laptop:
+        # the only thing outside a container that needs these is the bot and a
+        # browser on this machine, and containers reach each other by service
+        # name on the compose network rather than through a published port.
+        ports:
+            - "127.0.0.1:4317:4317" # OTLP gRPC
+            - "127.0.0.1:4318:4318" # OTLP HTTP
+            - "127.0.0.1:8889:8889" # Prometheus exposition, scraped by prometheus
+
+    prometheus:
+        image: prom/prometheus:v3.1.0
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.retention.time=15d"
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./prometheus/rules:/etc/prometheus/rules:ro
+            - prometheus-data:/prometheus
+        ports:
+            - "127.0.0.1:9090:9090"
+
+    grafana:
+        image: grafana/grafana:11.4.0
+        environment:
+            # local-only convenience; never copy this block anywhere shared
+            GF_AUTH_ANONYMOUS_ENABLED: "true"
+            GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+            GF_AUTH_DISABLE_LOGIN_FORM: "true"
+        volumes:
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+        ports:
+            - "127.0.0.1:3000:3000"
+        depends_on:
+            - prometheus
+
+    # The bot's own cache; not used by the demo but present so a real run
+    # against this stack has everything it needs.
+    redis:
+        image: redis:7-alpine
+        # Redis ships with no password. On 0.0.0.0 that put the config cache
+        # and, worse, the alert-gate state on every interface, where anyone
+        # on the network could write a suppression and silence a real outage.
+        ports:
+            - "127.0.0.1:6379:6379"
+
+volumes:
+    prometheus-data:

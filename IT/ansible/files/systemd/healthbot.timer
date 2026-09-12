@@ -1,0 +1,13 @@
+[Unit]
+Description=HealthBot SRE
+
+[Timer]
+OnCalendar=*:0/5
+OnBootSec=120
+AccuracySec=1m
+Persistent=true
+# Synchronized *:0/5 probes across hosts are a self-inflicted thundering herd
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

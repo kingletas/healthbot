@@ -1,0 +1,45 @@
+[Unit]
+Description=HealthBot SRE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# A batch job, not a daemon: oneshot makes systemd wait for the run and
+# record its real exit code. Type=simple considered the run finished at
+# fork, so the timer's Persistent= was measuring the wrong thing.
+Type=oneshot
+# The console script inside the wheel's virtualenv, by absolute path:
+# systemd has no PATH worth relying on, and the OS Python has no
+# healthbot in it by design.
+ExecStart=/opt/healthbot/bin/healthbot
+# What Ansible actually deploys. The unit pointed at /etc/environment for
+# years, so the HB_* overrides never reached the process. The '-' keeps the
+# unit bootable when the file is absent, which is the historical behaviour.
+EnvironmentFile=-/etc/healthbot.env
+
+# The run drives a browser against a public site. It has no reason to be root,
+# and every reason not to be.
+User=healthbot
+Group=healthbot
+
+# systemd creates /var/log/healthbot owned by User= before the run starts.
+# HB_LOG_DIR in the environment file points the app at it.
+LogsDirectory=healthbot
+LogsDirectoryMode=0750
+
+# A checkout journey plus four API calls can outrun the 90s default, and a
+# killed run is recorded as a failed one, with the site blamed for the monitor.
+TimeoutStartSec=300
+
+SyslogIdentifier=healthbot-sre
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+
+# No [Install]: the timer is the only thing that starts this unit. The old
+# WantedBy=multi-user.target started it at boot as well, on top of the
+# timer's OnBootSec.

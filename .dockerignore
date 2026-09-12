@@ -1,0 +1,20 @@
+# The feeder image builds from the repository root, so everything a build
+# does not need is excluded here. Without this, `docker build` uploads the
+# virtualenv, the Terraform provider binaries and the whole git history
+# before the first instruction runs.
+.git
+.github
+.venv
+dist
+local.d
+logs
+docs
+IT/terraform/.terraform
+IT/observability
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.coverage
+.ansible
+tests

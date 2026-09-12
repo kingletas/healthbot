@@ -1,0 +1,98 @@
+{
+    "editor.fontLigatures": "'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'zero', 'onum'",
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "files.associations": {
+        "*.toml": "ini",
+    },
+    "terminal.integrated.fontSize": 15,
+    "editor.minimap.enabled": false,
+    "editor.formatOnPaste": true,
+    "editor.mouseWheelZoom": true,
+    // "editor.fontLigatures": true,
+    "editor.fontFamily": "Cascadia Code",
+    "editor.tabSize": 4,
+    "editor.rulers": [
+        80
+    ],
+    "editor.cursorWidth": 3,
+    "editor.cursorStyle": "line",
+    "editor.cursorBlinking": "solid",
+    "editor.renderWhitespace": "boundary",
+    "editor.insertSpaces": true,
+    "explorer.autoReveal": true,
+    "explorer.sortOrder": "type",
+    "files.autoSave": "afterDelay",
+    "workbench.editor.highlightModifiedTabs": true,
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#021e45",
+        "statusBar.background": "#021e45",
+        "statusBar.foreground": "#e0e0e0",
+        "editorLineNumber.foreground": "#d1d1d1",
+        "editorOverviewRuler.errorForeground": "#fff"
+    },
+    "[yaml]": {
+        "editor.autoIndent": "keep"
+    },
+    "search.useIgnoreFiles": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/_site": true,
+        "**/tmp": true,
+        "**/*.pyc": true,
+        "**/*.asset-cache": true,
+        "**/*.cache": true,
+        "**/*.jekyll-cache": true,
+        "**/*.tweet-cache": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/*.egg-info": true,
+        "**/*.coverage": true,
+        "**/celerybeat-schedule": true,
+        "**/node_modules": true,
+        "**/bower_components": true
+    },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "files.eol": "\n",
+    "[markdown]": {
+        "files.trimTrailingWhitespace": false
+    },
+    "telemetry.enableTelemetry": false,
+    "workbench.list.openMode": "doubleClick",
+    "workbench.sideBar.location": "left",
+    "workbench.startupEditor": "newUntitledFile",
+    "git.ignoreMissingGitWarning": true,
+    "shellcheck.run": "onSave",
+    "extensions.ignoreRecommendations": true,
+    "editor.accessibilitySupport": "off",
+    "window.title": "${activeEditorLong}",
+    "editor.detectIndentation": false,
+    "problems.decorations.enabled": false,
+    "editor.renderControlCharacters": false,
+    "breadcrumbs.enabled": false,
+    "editor.autoClosingQuotes": "always",
+    "editor.autoSurround": "quotes",
+    "editor.autoClosingBrackets": "always",
+    "shellcheck.disableVersionCheck": true,
+    "todo-tree.defaultHighlight": {
+        "foreground": "green",
+        "type": "none"
+    },
+    "todo-tree.customHighlight": {
+        "TODO": {},
+        "FIXME": {}
+    },
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {},
+        "FIXME": {}
+    },
+    "todo-tree.highlights.defaultHighlight": {
+        "foreground": "green",
+        "type": "none"
+    }
+}

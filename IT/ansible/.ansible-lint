@@ -1,0 +1,14 @@
+---
+# Named rules replace the numeric ids removed in ansible-lint 6+
+# (204 -> yaml[line-length], 303 -> command-instead-of-module,
+#  305 -> command-instead-of-shell, 306 -> risky-shell-pipe,
+#  403 -> package-latest, 602 -> empty-string-compare)
+skip_list:
+    - yaml[line-length]
+    - command-instead-of-module
+    - command-instead-of-shell
+    - risky-shell-pipe
+    - package-latest
+    - empty-string-compare
+    - no-changed-when
+use_default_rules: true

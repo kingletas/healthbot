@@ -1,0 +1,39 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+  ],
+  "settings": {
+    "files.associations": {
+      "*.toml": "ini"
+    },
+    "terminal.integrated.fontSize": 15,
+    "explorer.autoReveal": true,
+    "explorer.sortOrder": "type",
+    "files.autoSave": "afterDelay",
+    "workbench.editor.highlightModifiedTabs": true,
+    "workbench.colorCustomizations": {
+      "activityBar.background": "#021e45",
+      "statusBar.background": "#021e45",
+      "statusBar.foreground": "#e0e0e0",
+      "editorLineNumber.foreground": "#d1d1d1",
+      "editorOverviewRuler.errorForeground": "#fff"
+    },
+    "workbench.list.openMode": "doubleClick",
+    "workbench.sideBar.location": "left",
+    "git.ignoreMissingGitWarning": true,
+    "extensions.ignoreRecommendations": true,
+    "window.title": "${activeEditorLong}",
+    "problems.decorations.enabled": false,
+    "breadcrumbs.enabled": false,
+    "todo-tree.highlights.customHighlight": {
+      "TODO": {},
+      "FIXME": {}
+    },
+    "todo-tree.highlights.defaultHighlight": {
+      "foreground": "green",
+      "type": "none"
+    }
+  }
+}

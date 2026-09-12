@@ -1,0 +1,132 @@
+---
+# SLO recording and alerting rules over the counters the bot emits.
+#
+# Multi-window, multi-burn-rate (SRE Workbook §5.5): page on a fast burn
+# confirmed by a short window, ticket on a slow burn confirmed by a medium
+# one. Targets are not hardcoded here; they come from the
+# healthbot_slo_target gauge the bot derives from config/slo.yml, so
+# changing an objective is a config change, not a rules change.
+groups:
+    - name: healthbot-slo-recording
+      interval: 30s
+      rules:
+          - record: slo:healthbot_error_ratio:rate5m
+            expr: |
+                (
+                    sum by (slo) (rate(healthbot_slo_events_total{result="bad"}[5m]))
+                    or
+                    sum by (slo) (rate(healthbot_slo_events_total[5m])) * 0
+                )
+                /
+                sum by (slo) (rate(healthbot_slo_events_total[5m]))
+          - record: slo:healthbot_error_ratio:rate30m
+            expr: |
+                (
+                    sum by (slo) (rate(healthbot_slo_events_total{result="bad"}[30m]))
+                    or
+                    sum by (slo) (rate(healthbot_slo_events_total[30m])) * 0
+                )
+                /
+                sum by (slo) (rate(healthbot_slo_events_total[30m]))
+          - record: slo:healthbot_error_ratio:rate1h
+            expr: |
+                (
+                    sum by (slo) (rate(healthbot_slo_events_total{result="bad"}[1h]))
+                    or
+                    sum by (slo) (rate(healthbot_slo_events_total[1h])) * 0
+                )
+                /
+                sum by (slo) (rate(healthbot_slo_events_total[1h]))
+          - record: slo:healthbot_error_ratio:rate6h
+            expr: |
+                (
+                    sum by (slo) (rate(healthbot_slo_events_total{result="bad"}[6h]))
+                    or
+                    sum by (slo) (rate(healthbot_slo_events_total[6h])) * 0
+                )
+                /
+                sum by (slo) (rate(healthbot_slo_events_total[6h]))
+
+          # burn rate = error ratio / error budget (1 - target)
+          - record: slo:healthbot_burn_rate:rate5m
+            expr: |
+                slo:healthbot_error_ratio:rate5m
+                / on (slo) group_left ()
+                clamp_min(1 - max by (slo) (healthbot_slo_target), 0.0001)
+          - record: slo:healthbot_burn_rate:rate30m
+            expr: |
+                slo:healthbot_error_ratio:rate30m
+                / on (slo) group_left ()
+                clamp_min(1 - max by (slo) (healthbot_slo_target), 0.0001)
+          - record: slo:healthbot_burn_rate:rate1h
+            expr: |
+                slo:healthbot_error_ratio:rate1h
+                / on (slo) group_left ()
+                clamp_min(1 - max by (slo) (healthbot_slo_target), 0.0001)
+          - record: slo:healthbot_burn_rate:rate6h
+            expr: |
+                slo:healthbot_error_ratio:rate6h
+                / on (slo) group_left ()
+                clamp_min(1 - max by (slo) (healthbot_slo_target), 0.0001)
+
+          # rolling compliance over the SLO window
+          - record: slo:healthbot_compliance:ratio_30d
+            expr: |
+                1 -
+                (
+                    (
+                        sum by (slo) (increase(healthbot_slo_events_total{result="bad"}[30d]))
+                        or
+                        sum by (slo) (increase(healthbot_slo_events_total[30d])) * 0
+                    )
+                    /
+                    sum by (slo) (increase(healthbot_slo_events_total[30d]))
+                )
+
+    - name: healthbot-slo-alerts
+      rules:
+          - alert: HealthBotSLOFastBurn
+            expr: |
+                slo:healthbot_burn_rate:rate1h > 14.4
+                and
+                slo:healthbot_burn_rate:rate5m > 14.4
+            for: 2m
+            labels:
+                severity: page
+            annotations:
+                summary: "{{ $labels.slo }} is burning error budget 14.4x too fast"
+                description: >-
+                    At this rate the 30-day error budget for {{ $labels.slo }}
+                    is gone in about 2 days. Confirmed by both the 1h and 5m
+                    windows.
+
+          - alert: HealthBotSLOSlowBurn
+            expr: |
+                slo:healthbot_burn_rate:rate6h > 6
+                and
+                slo:healthbot_burn_rate:rate30m > 6
+            for: 15m
+            labels:
+                severity: ticket
+            annotations:
+                summary: "{{ $labels.slo }} is burning error budget 6x too fast"
+                description: >-
+                    Sustained burn over 6h confirmed by 30m. Worth a ticket
+                    before it becomes a page.
+
+          # The dead-man's switch: HealthBot has watched the estate for years
+          # with nothing watching HealthBot.
+          - alert: HealthBotSilent
+            expr: |
+                absent_over_time(healthbot_heartbeat_total[15m])
+                or
+                sum(rate(healthbot_heartbeat_total[15m])) == 0
+            for: 5m
+            labels:
+                severity: page
+            annotations:
+                summary: "HealthBot has stopped reporting"
+                description: >-
+                    No heartbeat for 15 minutes: the monitor itself is down,
+                    crashed, or cannot reach the collector. This is the alert
+                    that fires when every other alert cannot.

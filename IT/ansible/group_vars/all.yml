@@ -1,0 +1,95 @@
+---
+system_bin: /usr/local/bin
+system_tmp: /tmp
+
+######
+# DevOps related tags
+######
+healthbot_tags:
+    - systemd
+    - systemd_units
+    - devops
+    - tools
+    - monitoring
+    - terraform
+    - aws
+    - healthbot
+    - newrelic
+    - alert
+
+######
+# Performance related tags
+######
+performance_tags:
+    - tools
+    - performance
+
+ansible_user: ubuntu
+
+# The unpriviliged account the timer runs the bot as, and where the Playwright
+# browser is installed so that account can read it.
+healthbot_user: healthbot
+playwright_browsers_path: /opt/ms-playwright
+# The wheel's own virtualenv. The systemd unit runs the console script from
+# inside it, so nothing depends on what the OS Python happens to hold.
+healthbot_venv: /opt/healthbot
+
+# DORA. The journal lives on the control machine, beside the git repository
+# lead time is computed against. Set healthbot_record_deploy to false if you
+# do not keep one. Do not leave it on and ignore the error, because a
+# journal that silently stops counting reports better than the truth.
+healthbot_record_deploy: true
+healthbot_dora_command: healthbot-dora
+
+system_dir: /lib/systemd/system/
+service_name: HealthBot
+# Where the wheel is staged on the target. Only the directory is declared:
+# the file keeps the name uv build gave it, because pip refuses a wheel whose
+# filename is not name-version-pytag-abitag-plattag.whl. Copying it to
+# healthbot.whl to stay version-independent made every install fail with
+# "is not a valid wheel filename".
+healthbot_tmp_dir: "{{ system_tmp }}"
+# where the deployable wheel comes from: uv build's output on the control
+# machine (or a CI-downloaded artifact, in which case override the glob).
+# The old flow copied a hand-built files/healthbot.whl that drifted from the
+# source; the artifact is built, never stored in the repo.
+healthbot_wheel_glob: "{{ playbook_dir }}/../../dist/healthbot-*.whl"
+packages:
+    - fail2ban
+    - curl
+    - wget
+    - apt-transport-https
+    - ca-certificates
+    - unzip
+    - zip
+    - tar
+    - git
+    - jq
+    - redis-server
+    - python3-venv
+# awscli is deliberately absent. Ubuntu dropped the package at 24.04, so the
+# play died on it there, and the bot never needed it: every AWS call goes
+# through boto3. An operator who wants the CLI installs v2 by hand.
+
+service_names:
+    - timer
+    - service
+
+# Rendered into /etc/healthbot.env by the template task. These are example
+# values: a deployment overrides every one of them in its own inventory.
+# HB_TAG_NAME and HB_ENVIRONMENT select the EC2 fleet by tag, HB_DB_IDENTIFIER
+# names the RDS cluster, and HB_SECRETS_NAME is the Secrets Manager entry the
+# run credentials come from.
+healthbot_env:
+    HB_TAG_NAME: "EXAMPLE-WEB"
+    HB_ENVIRONMENT: "Production"
+    HB_DB_IDENTIFIER: "example-rds-cluster"
+    HB_SECRETS_NAME: "healthbot-example-secret"
+    HB_AWS_PROFILE: "default"
+    # systemd's LogsDirectory=healthbot creates this and owns it to the
+    # service account. Without it the app writes inside its own site-packages.
+    HB_LOG_DIR: "/var/log/healthbot"
+    PLAYWRIGHT_BROWSERS_PATH: "/opt/ms-playwright"
+    # Telemetry stays off until a collector endpoint exists for this host;
+    # set HB_OTEL_ENABLED: "1" and OTEL_EXPORTER_OTLP_ENDPOINT to enable
+    HB_OTEL_ENABLED: "0"

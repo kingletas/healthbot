@@ -1,0 +1,202 @@
+---
+- name: Configure an Environment to use HealthBot
+  hosts: all
+  become: true
+  # Stated rather than assumed: run_once on the DORA tasks only means "once
+  # for the whole play" under the linear strategy, which is the default.
+  strategy: linear
+  tasks:
+      # raw, because this is what gives the host a Python for every task
+      # after it. python3-venv is part of it: 24.04 marks the system Python
+      # externally managed (PEP 668), so the wheel goes in its own
+      # virtualenv and pip is never asked to write into /usr.
+      - name: Install Python and the venv module
+        ansible.builtin.raw: apt -y update && apt install -y python3 python3-venv
+        register: bootstrap_python
+        # raw reports changed on every run by default, which makes the changed
+        # count meaningless and a second --check run unable to demonstrate
+        # idempotence. apt already says whether it did anything.
+        changed_when: "'0 newly installed' not in bootstrap_python.stdout"
+
+      - name: Refresh cache... install the packages
+        ansible.builtin.apt:
+            update_cache: true
+            autoremove: true
+            pkg: "{{ packages }}"
+            state: present
+
+      - name: Upload configuration
+        ansible.builtin.copy:
+            backup: true
+            src: jail.local
+            dest: /etc/fail2ban/
+            mode: "u=rw,g=r,o=r"
+        notify: Restart fail2ban
+
+      # started, not restarted: an unconditional restart reports changed on
+      # every run and drops connections a deploy had no reason to touch. The
+      # handler restarts it only when the jail configuration actually moved.
+      - name: Start service if not started
+        ansible.builtin.service:
+            name: fail2ban
+            state: started
+            enabled: true
+
+      - name: Locate the built wheel on the control machine
+        ansible.builtin.set_fact:
+            healthbot_wheel_src: >-
+                {{ lookup('ansible.builtin.fileglob', healthbot_wheel_glob, wantlist=True)
+                   | sort | last | default('') }}
+
+      - name: Refuse to deploy without a wheel
+        ansible.builtin.assert:
+            that: healthbot_wheel_src | length > 0
+            fail_msg: "No wheel matches {{ healthbot_wheel_glob }}, run 'uv build' first"
+
+      - name: Name the staged wheel after the one that was found
+        ansible.builtin.set_fact:
+            healthbot_tmp_file: "{{ healthbot_tmp_dir }}/{{ healthbot_wheel_src | basename }}"
+
+      - name: Copy the HealthBot app
+        ansible.builtin.copy:
+            src: "{{ healthbot_wheel_src }}"
+            dest: "{{ healthbot_tmp_file }}"
+            mode: "u=rw,g=r,o=r"
+
+      # Its own virtualenv, not the system Python. 24.04 refuses a pip
+      # install into /usr outright, and on any release it keeps twenty
+      # dependencies of ours out of the OS interpreter.
+      - name: Install the HealthBot app into its own virtualenv
+        ansible.builtin.pip:
+            name: "file://{{ healthbot_tmp_file }}"
+            virtualenv: "{{ healthbot_venv }}"
+            virtualenv_command: python3 -m venv
+        register: healthbot_install
+
+      # The run drives a browser against a public site; it has no reason to
+      # be root. A system account with no login shell and no home.
+      - name: Create the service account
+        ansible.builtin.user:
+            name: "{{ healthbot_user }}"
+            system: true
+            shell: /usr/sbin/nologin
+            create_home: false
+            home: /nonexistent
+
+      # The checkout check is a Playwright browser, and nothing installed one
+      # so on a fresh host the browser failed to launch, validate_checkout
+      # caught it, and checkout was reported down on every single run.
+      # PLAYWRIGHT_BROWSERS_PATH puts it somewhere the service account can
+      # read rather than in root's cache.
+      - name: Install the browser the checkout check drives
+        ansible.builtin.command:
+            cmd: "{{ healthbot_venv }}/bin/playwright install --with-deps chromium"
+            creates: "{{ playwright_browsers_path }}/chromium-*"
+        environment:
+            PLAYWRIGHT_BROWSERS_PATH: "{{ playwright_browsers_path }}"
+
+      - name: Make the browsers readable by the service account
+        ansible.builtin.file:
+            path: "{{ playwright_browsers_path }}"
+            state: directory
+            owner: root
+            group: "{{ healthbot_user }}"
+            mode: "0750"
+            recurse: true
+
+      # Rendered from group_vars rather than copied from a committed file:
+      # the env file is configuration, not a secret, and belongs in vars
+      - name: Render the environment file
+        ansible.builtin.template:
+            src: "{{ service_name | lower }}.env.j2"
+            dest: "/etc/{{ service_name | lower }}.env"
+            mode: "0600"
+
+      - name: Copy the systemd service and timer
+        ansible.builtin.copy:
+            src: "systemd/{{ service_name | lower }}.{{ item }}"
+            dest: "{{ system_dir }}/{{ service_name | lower }}.{{ item }}"
+            mode: "u=rw,g=r,o=r"
+        loop: "{{ service_names }}"
+
+      # Only the timer is enabled: the service unit carries no [Install]
+      # section, so it is started by the timer and nothing else.
+      - name: Enable the HealthBot timer
+        ansible.builtin.systemd:
+            name: "{{ service_name | lower }}.timer"
+            state: started
+            enabled: true
+            daemon_reload: true
+
+      - name: Set the hostname using systemd
+        ansible.builtin.hostname:
+            name: "{{ service_name | lower }}-sre"
+            use: systemd
+
+      - name: Set timezone to CST6CDT (America/Chicago)
+        community.general.timezone:
+            name: CST6CDT
+
+      # The staged wheel stays. Copying it and then deleting it made those
+      # two tasks report changed on every run for ever, which is a permanent
+      # 2 in the changed count and leaves no way to tell a converged run from
+      # a real one. Superseded wheels are what actually needed cleaning up.
+      - name: Find wheels left by an earlier deploy
+        ansible.builtin.find:
+            paths: "{{ healthbot_tmp_dir }}"
+            patterns: "healthbot-*.whl"
+            excludes: "{{ healthbot_wheel_src | basename }}"
+        register: healthbot_superseded_wheels
+
+      - name: Remove the wheels an earlier deploy left behind
+        ansible.builtin.file:
+            path: "{{ item.path }}"
+            state: absent
+        loop: "{{ healthbot_superseded_wheels.files }}"
+        loop_control:
+            label: "{{ item.path }}"
+
+      - name: Cleanup packages
+        ansible.builtin.apt:
+            autoremove: true
+            autoclean: true
+
+      # DORA. Both tasks run on the control machine: the git repository is
+      # there, and lead time cannot be computed anywhere else.
+      - name: Find the commit being deployed # noqa: run-once
+        ansible.builtin.command:
+            cmd: "git -C {{ playbook_dir }} rev-parse HEAD"
+        delegate_to: localhost
+        become: false
+        run_once: true
+        changed_when: false
+        # A control machine with a CI-downloaded wheel and no checkout is a
+        # legitimate way to deploy. It records the deploy without a sha and
+        # loses lead time, rather than failing the play.
+        failed_when: false
+        register: healthbot_head
+
+      # Only when pip actually installed something. A converged re-run
+      # deployed nothing, and recording it would inflate deployment
+      # frequency, which is the one way this journal could read better than
+      # truth. Recording is loud when it fails: a journal that quietly
+      # stops counting is worse than one that is switched off, so turn it
+      # off with healthbot_record_deploy rather than by ignoring an error.
+      - name: Record the deploy in the DORA journal # noqa: run-once
+        ansible.builtin.command:
+            cmd: >-
+                {{ healthbot_dora_command }} record deploy
+                {{ ('--sha ' + healthbot_head.stdout) if healthbot_head.rc == 0 else '' }}
+        delegate_to: localhost
+        become: false
+        run_once: true
+        changed_when: true
+        when:
+            - healthbot_record_deploy | bool
+            - healthbot_install.changed
+
+  handlers:
+      - name: Restart fail2ban
+        ansible.builtin.service:
+            name: fail2ban
+            state: restarted

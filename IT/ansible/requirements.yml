@@ -1,0 +1,11 @@
+---
+# The collections the playbook uses beyond ansible.builtin. Install them with:
+#
+#     ansible-galaxy collection install -r IT/ansible/requirements.yml
+#
+# `make lint` and CI both do this before linting, because ansible-lint cannot
+# resolve a module whose collection is absent and reports it as a syntax error
+# a long way from the real cause.
+collections:
+  - name: community.general
+    version: ">=8.0.0"
