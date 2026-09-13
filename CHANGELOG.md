@@ -9,6 +9,10 @@ first release's notes.
 
 ### Added
 
+- **A guide for deploying on AWS.** `docs/on-aws.md` takes you from an empty
+  account to a systemd timer running the bot every five minutes: the tools, what
+  has to exist in the account first, the credentials to collect, then Packer,
+  Terraform and the playbook in order.
 - **Service level objectives.** Five are declared in `healthbot/config/slo.yml`:
   checkout, the canary sweep, both latencies and the monitor's own availability.
   Every run emits a good or bad event per objective.

@@ -8,6 +8,8 @@ HealthBot is a Python SRE bot that probes the storefront from the outside, throu
 
 **New here? [docs/from-nothing.md](docs/from-nothing.md) gets you from a clone to a real alert in about twenty minutes, with no AWS account, no credentials, and no storefront of your own.**
 
+**Deploying it for real? [docs/on-aws.md](docs/on-aws.md) is the whole AWS path, from an empty account to a systemd timer running the bot every five minutes.**
+
 ## Everything runs through `make`
 
 ```bash
