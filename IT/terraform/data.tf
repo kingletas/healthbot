@@ -94,6 +94,27 @@ data "aws_iam_policy_document" "allow-policy" {
   }
 
   statement {
+    sid = "HealthBotDescribeFleet"
+
+    actions = [
+      "ec2:DescribeInstances"
+    ]
+    # checks/aws.py finds the fleet by tag on every run. DescribeInstances
+    # takes no resource-level permission, so the tag pair is the filter and
+    # IAM cannot narrow this further.
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "HealthBotPublishToTopic"
+
+    actions = [
+      "sns:Publish"
+    ]
+    resources = [data.aws_sns_topic.this.arn]
+  }
+
+  statement {
     sid = "HealthBotAccessToSSM"
 
     actions = [

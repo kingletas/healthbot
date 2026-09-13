@@ -1,14 +1,10 @@
+# A base image: the application is installed afterwards by IT/ansible over SSH.
+# The deploy playbook needs a wheel that only exists on the control machine.
 build {
   sources = ["source.amazon-ebs.ubuntu_latest"]
 
   provisioner "shell" {
     script = "bin/install"
-  }
-
-  provisioner "ansible-local" {
-
-    playbook_dir  = format("%s/../ansible/", abspath(path.root))
-    playbook_file = format("%s/../ansible/playbook.yml", abspath(path.root))
   }
 
   provisioner "shell" {

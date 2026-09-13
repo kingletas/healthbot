@@ -32,6 +32,11 @@ first release's notes.
 
 ### Changed
 
+- **The AMI is a base image, and the bot is installed onto it afterwards.** The
+  Packer build ran the deploy playbook as well, so a host was configured twice
+  and the image build needed a wheel that only exists on the machine you deploy
+  from. It now lays down the operating system packages and stops, which also
+  means **a new version of HealthBot no longer needs a new image**.
 - **The local stack keeps its own CloudWatch datapoints fresh.** A `feeder`
   service runs the bot's own `healthbot-local feed` once a minute, so there is
   no manual step between `seed` and a run. It was a `feed &` you had to
@@ -85,6 +90,15 @@ first release's notes.
 
 ### Fixed
 
+- **The instance can read its own fleet and publish its own alerts.** The role
+  Terraform attaches granted Secrets Manager, KMS, CloudWatch and SSM, but not
+  `ec2:DescribeInstances` or `sns:Publish`, both of which every run makes. The
+  AWS metrics came back empty, which is treated as a failed signal and alerts,
+  and then the SNS half of that alert was refused.
+- **The example Packer variables tag the image the way Terraform looks for it.**
+  They said `sre` and the AMI lookup filters on `SRE`. AWS tag filters match
+  exactly, case included, so an image built from the example as-is was invisible
+  to the apply that wanted it.
 - **An unwritable log directory no longer kills the import.** `healthbot.logs`
   created its directory as an import side effect, so a process that could not
   write there, such as a container running as a system account with no home

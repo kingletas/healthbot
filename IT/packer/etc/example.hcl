@@ -8,6 +8,6 @@
 ami_name        = "healthbot"
 instance_type   = "t2.micro"
 tag_name        = "healthbot"
-tag_service     = "sre"
+tag_service     = "SRE"
 tag_owner       = "platform"
 tag_environment = "healthbot-dev"
