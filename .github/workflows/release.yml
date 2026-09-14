@@ -48,7 +48,7 @@ jobs:
       # wheel from the tagged commit, install it into a clean environment, and
       # check the console scripts the deploy relies on actually resolve.
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
