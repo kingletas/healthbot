@@ -1,7 +1,6 @@
 # HealthBot
 
-[![CI](https://github.com/kingletas/healthbot/actions/workflows/healthbot-ci.yml/badge.svg)](https://github.com/kingletas/healthbot/actions/workflows/healthbot-ci.yml)
-[![Infra CI](https://github.com/kingletas/healthbot/actions/workflows/infra-ci.yml/badge.svg)](https://github.com/kingletas/healthbot/actions/workflows/infra-ci.yml)
+[![CI](https://github.com/kingletas/healthbot/actions/workflows/ci.yml/badge.svg)](https://github.com/kingletas/healthbot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 HealthBot is a Python SRE bot that probes the storefront from the outside, through New Relic, AWS CloudWatch, Google Analytics, a real-browser checkout journey and a canary URL sweep. It evaluates the results against declared SLOs, emits OpenTelemetry, and notifies through Slack, SMS and SNS. It ships its own infrastructure: Terraform, Packer and Ansible under `IT/`, a local observability stack under `IT/observability/`, and a full local environment under `IT/local/` (Mattermost, API stubs, and the shared MiniStack playing AWS) in which the production bot runs end to end.
@@ -175,4 +174,4 @@ Infrastructure: build the AMI under `IT/packer` by copying the tracked example f
 
 ## CI
 
-Two path-gated workflows: `healthbot-ci.yml` (ruff, format check, import smoke test, pytest, `uv build` + artifact) and `infra-ci.yml` (credential-free `terraform init -backend=false` + fmt + validate, `packer fmt` + `init` + `validate`, tfsec, ansible-lint). The pre-commit config mirrors the same gates locally.
+`ci.yml` runs `make check`, the same gate you run locally, then builds the wheel and uploads it as an artifact. It needs no credentials: Terraform validates without a backend and Packer validates against the tracked example vars. If it passes on your machine, it passes on the runner.

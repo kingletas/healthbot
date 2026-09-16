@@ -6,11 +6,10 @@ from healthbot import logs
 
 
 def test_an_unwritable_log_directory_costs_the_file_and_not_the_run(monkeypatch, tmp_path):
-    # A container running as a system account with no home, or a read-only
-    # install: makedirs raises, and importing the package used to die with it.
-    blocked = tmp_path / "read-only" / "healthbot"
-    (tmp_path / "read-only").mkdir()
-    (tmp_path / "read-only").chmod(0o500)
+    # A file where the directory should be makes makedirs raise even for root,
+    # which a permission bit does not.
+    (tmp_path / "not-a-directory").write_text("")
+    blocked = tmp_path / "not-a-directory" / "healthbot"
 
     # capsys cannot see the real sink: it is enqueue=True, so it writes from
     # another thread to the stderr it captured at import.

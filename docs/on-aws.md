@@ -401,11 +401,11 @@ make collections
 make deploy
 ```
 
-That installs fail2ban and Redis, puts the package in its own virtual
-environment at `/opt/healthbot`, downloads the Chromium that drives the checkout
-journey into `/opt/ms-playwright`, creates an unprivileged `healthbot` account
-with no login shell, writes `/etc/healthbot.env`, and starts a systemd timer
-that fires every five minutes with up to a minute of jitter.
+When it finishes, each host has fail2ban and Redis, the package in its own
+virtual environment at `/opt/healthbot`, the Chromium the checkout journey
+drives in `/opt/ms-playwright`, an unprivileged `healthbot` account with no
+login shell, and `/etc/healthbot.env`. A systemd timer runs the bot every five
+minutes, with up to a minute of jitter.
 
 Run it a second time. A correct run reports `changed=0`.
 

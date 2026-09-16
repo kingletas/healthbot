@@ -36,6 +36,9 @@ first release's notes.
 
 ### Changed
 
+- **One CI workflow, and it runs `make check`.** `ci.yml` replaces
+  `healthbot-ci.yml` and `infra-ci.yml`, so the runner checks exactly what
+  you check locally. tfsec is no longer part of CI: it was set to never fail.
 - **The AMI is a base image, and the bot is installed onto it afterwards.** The
   Packer build ran the deploy playbook as well, so a host was configured twice
   and the image build needed a wheel that only exists on the machine you deploy

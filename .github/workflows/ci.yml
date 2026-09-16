@@ -1,0 +1,54 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A push that supersedes another cancels it, since its answer is about code nobody has any more.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: make check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+          terraform_wrapper: false
+
+      - name: Install Packer
+        uses: hashicorp/setup-packer@v3
+
+      - name: Build the environment
+        run: make install
+
+      - name: Run the gate
+        run: make check
+
+      - name: Build the wheel
+        run: make build
+
+      # The playbook's healthbot_wheel_glob can point at a downloaded copy of this.
+      - name: Upload the wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthbot-wheel
+          path: dist/*.whl
