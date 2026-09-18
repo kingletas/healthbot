@@ -73,6 +73,12 @@ packer: ## Initialise the AMI template's plugins and validate it against the exa
 	@cd $(ROOT_DIR)/IT/packer && packer init . >/dev/null
 	@cd $(ROOT_DIR)/IT/packer && packer validate -var-file=etc/example.hcl .
 
+# A real plan, which validate cannot approximate: it resolves the six data
+# sources the tree reads and propagates computed values. ACTION passes through.
+.PHONY: tf-local
+tf-local: ## Plan against the local AWS emulator: make tf-local ACTION=plan
+	@$(ROOT_DIR)/IT/terraform/tf-local.sh $(or $(ACTION),plan)
+
 .PHONY: check
 check: lint packaging test terraform packer ## Everything a commit has to pass
 
