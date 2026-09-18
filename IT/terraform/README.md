@@ -8,16 +8,19 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 ## Requirements
 
 | Name | Version |
-|------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~>3.65.0 |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.10 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~>6.61.0 |
+| <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) | ~>2.4 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~>3.9 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 3.65.0 |
-| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | 2.2.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.1.0 |
+| ---- | ------- |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.61.0 |
+| <a name="provider_cloudinit"></a> [cloudinit](#provider\_cloudinit) | 2.4.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.9.0 |
 
 ## Modules
 
@@ -26,7 +29,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_cloudwatch_metric_alarm.healthbot_cpu_utilization_too_high](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_cloudwatch_metric_alarm.healthbot_status_check_failed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_iam_instance_profile.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
@@ -60,8 +63,8 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_alarm_actions"></a> [alarm\_actions](#input\_alarm\_actions) | The list of actions to execute when this alarm transitions into an ALARM state from any other state. Each action is specified as an Amazon Resource Name (ARN). | `list(string)` | <pre>[<br>  "arn:aws:automate:us-east-2:ec2:reboot"<br>]</pre> | no |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_alarm_actions"></a> [alarm\_actions](#input\_alarm\_actions) | The list of actions to execute when this alarm transitions into an ALARM state from any other state. Each action is specified as an Amazon Resource Name (ARN). | `list(string)` | <pre>[<br/>  "arn:aws:automate:us-east-2:ec2:reboot"<br/>]</pre> | no |
 | <a name="input_app_environment_name"></a> [app\_environment\_name](#input\_app\_environment\_name) | Healthbot Environment name | `string` | n/a | yes |
 | <a name="input_app_environment_tag_name"></a> [app\_environment\_tag\_name](#input\_app\_environment\_tag\_name) | Healthbot Environment tag name to get AWS Resources | `string` | n/a | yes |
 | <a name="input_associate_public_ip_address"></a> [associate\_public\_ip\_address](#input\_associate\_public\_ip\_address) | Add a static IP to the instance | `bool` | `false` | no |
@@ -69,23 +72,24 @@ No modules.
 | <a name="input_db_cluster_identifier"></a> [db\_cluster\_identifier](#input\_db\_cluster\_identifier) | Database cluster to work with | `string` | n/a | yes |
 | <a name="input_delete_on_termination"></a> [delete\_on\_termination](#input\_delete\_on\_termination) | Delete any volumes on termination | `bool` | `true` | no |
 | <a name="input_ebs_enabled"></a> [ebs\_enabled](#input\_ebs\_enabled) | Enable EBS | `bool` | `true` | no |
-| <a name="input_egress_map"></a> [egress\_map](#input\_egress\_map) | Outgoing port maps | <pre>object({<br>    from_port   = number,<br>    to_port     = number,<br>    protocol    = string,<br>    cidr_blocks = list(string)<br>  })</pre> | n/a | yes |
-| <a name="input_enable_deletion_protection"></a> [enable\_deletion\_protection](#input\_enable\_deletion\_protection) | Protect against deletion | `bool` | `false` | no |
-| <a name="input_enable_dns_hostnames"></a> [enable\_dns\_hostnames](#input\_enable\_dns\_hostnames) | Enable the DNS hostnames | `bool` | `true` | no |
+| <a name="input_egress_map"></a> [egress\_map](#input\_egress\_map) | Outgoing port maps | <pre>object({<br/>    from_port   = number,<br/>    to_port     = number,<br/>    protocol    = string,<br/>    cidr_blocks = list(string)<br/>  })</pre> | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | What environment we are deploying to | `string` | n/a | yes |
+| <a name="input_environment_tag_suffix"></a> [environment\_tag\_suffix](#input\_environment\_tag\_suffix) | Appended to the titled environment to form the Environment tag HealthBot filters the fleet on | `string` | `"FLEET"` | no |
 | <a name="input_evaluation_period"></a> [evaluation\_period](#input\_evaluation\_period) | How many periods would trigger an alarm | `number` | `1` | no |
-| <a name="input_ga_view_id"></a> [ga\_view\_id](#input\_ga\_view\_id) | GA View ID to get the data from | `string` | n/a | yes |
+| <a name="input_ga_property_id"></a> [ga\_property\_id](#input\_ga\_property\_id) | GA4 property to read realtime active users from, numeric or properties/<id> | `string` | n/a | yes |
 | <a name="input_healthbot_cpu_utilization_datapoints_to_alarm"></a> [healthbot\_cpu\_utilization\_datapoints\_to\_alarm](#input\_healthbot\_cpu\_utilization\_datapoints\_to\_alarm) | The number of datapoints that must be breaching to trigger the alarm | `number` | `3` | no |
 | <a name="input_healthbot_cpu_utilization_evaluation_period"></a> [healthbot\_cpu\_utilization\_evaluation\_period](#input\_healthbot\_cpu\_utilization\_evaluation\_period) | How many periods would trigger an alarm | `number` | `4` | no |
 | <a name="input_healthbot_cpu_utilization_too_high"></a> [healthbot\_cpu\_utilization\_too\_high](#input\_healthbot\_cpu\_utilization\_too\_high) | Threshold for the instance to report a high cpu usage | `number` | `90` | no |
 | <a name="input_healthbot_status_check_threshold"></a> [healthbot\_status\_check\_threshold](#input\_healthbot\_status\_check\_threshold) | Threshold for the instance to fail a check | `number` | `0.99` | no |
-| <a name="input_ingress_map"></a> [ingress\_map](#input\_ingress\_map) | Incoming port maps | <pre>map(object({<br>    from_port = number,<br>    to_port   = number,<br>    protocol  = string,<br>    cidr_blocks = list(string) }<br>    )<br>  )</pre> | n/a | yes |
+| <a name="input_ingress_map"></a> [ingress\_map](#input\_ingress\_map) | Incoming port maps | <pre>map(object({<br/>    from_port = number,<br/>    to_port   = number,<br/>    protocol  = string,<br/>    cidr_blocks = list(string) }<br/>    )<br/>  )</pre> | n/a | yes |
 | <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | AWS Instance type | `string` | `"t2.micro"` | no |
 | <a name="input_iops"></a> [iops](#input\_iops) | EBS throughput | `string` | `100` | no |
 | <a name="input_king_slack_token"></a> [king\_slack\_token](#input\_king\_slack\_token) | Debugging token | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | Name of the application | `string` | n/a | yes |
 | <a name="input_new_relic_api"></a> [new\_relic\_api](#input\_new\_relic\_api) | New Relic API key to get the data | `string` | n/a | yes |
 | <a name="input_ok_actions"></a> [ok\_actions](#input\_ok\_actions) | Actions to perform when the instance is fine | `list(any)` | `[]` | no |
+| <a name="input_owner_tag"></a> [owner\_tag](#input\_owner\_tag) | Team the provisioned resources belong to | `string` | `"Platform"` | no |
+| <a name="input_production_profile"></a> [production\_profile](#input\_production\_profile) | Profile the aws\_production provider alias authenticates with; null leaves it on the ambient credential chain | `string` | `null` | no |
 | <a name="input_profile"></a> [profile](#input\_profile) | Profile to use with Terraform | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | Default region where we are deploying the app to | `string` | n/a | yes |
 | <a name="input_secrets_path"></a> [secrets\_path](#input\_secrets\_path) | GA secrets file | `string` | n/a | yes |
@@ -108,6 +112,6 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_ec2-healthbot-instance"></a> [ec2-healthbot-instance](#output\_ec2-healthbot-instance) | n/a |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

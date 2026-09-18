@@ -72,8 +72,10 @@ resource "aws_instance" "this" {
   )
 }
 
+# An alarm name has to be known at plan time, so it is built from the deployment
+# name; the instance id goes in dimensions, where an unknown value is fine.
 resource "aws_cloudwatch_metric_alarm" "healthbot_status_check_failed" {
-  alarm_name          = format("awsec2-%s-status-check", aws_instance.this.id)
+  alarm_name          = format("%sstatus-check", local.prefix)
   comparison_operator = "GreaterThanThreshold"
   metric_name         = "StatusCheckFailed"
   namespace           = "AWS/EC2"
@@ -100,11 +102,11 @@ resource "aws_cloudwatch_metric_alarm" "healthbot_status_check_failed" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "healthbot_cpu_utilization_too_high" {
-  alarm_name          = format("%s-highCPUUtilization", aws_instance.this.id)
+  alarm_name          = format("%scpu-utilization-high", local.prefix)
   comparison_operator = "GreaterThanThreshold"
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  alarm_description   = "Status Check Fail"
+  alarm_description   = "CPU utilization too high"
 
   period        = var.statistic_period
   statistic     = var.statistic

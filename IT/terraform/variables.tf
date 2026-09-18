@@ -23,6 +23,11 @@ variable "profile" {
   description = "Profile to use with Terraform"
   type        = string
 }
+variable "production_profile" {
+  description = "Profile the aws_production provider alias authenticates with; null leaves it on the ambient credential chain"
+  type        = string
+  default     = null
+}
 
 variable "environment_tag_suffix" {
   description = "Appended to the titled environment to form the Environment tag HealthBot filters the fleet on"
