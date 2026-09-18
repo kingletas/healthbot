@@ -50,9 +50,13 @@ first release's notes.
   `<name>-<environment>-cpu-utilization-high`. **On an existing deployment the
   next apply destroys and recreates both alarms**, so read the plan first and
   re-point anything keyed on the old names, such as a dashboard or an SNS
-  subscription. The old names changed whenever the instance was replaced, which
-  meant the alarms were replaced on every AMI build and could not be referenced
-  from a module.
+  subscription. **A recreated alarm starts in `INSUFFICIENT_DATA` and cannot
+  fire until it has collected enough data** — about 15 minutes for the status
+  check and about an hour for CPU — and the status check's default action is an
+  EC2 reboot, so for that window a hung instance is not rebooted and nobody is
+  told. It is worth paying once: the old names changed whenever the instance
+  was replaced, so the same blind window happened on **every** AMI build, and
+  the alarms could not be referenced from a module at all.
 
 - **One CI workflow, and it runs `make check`.** `ci.yml` replaces
   `healthbot-ci.yml` and `infra-ci.yml`, so the runner checks exactly what
