@@ -9,6 +9,13 @@ first release's notes.
 
 ### Added
 
+- **`make tf-local` plans the infrastructure against a local AWS emulator.** It
+  needs no AWS account and no credentials: point a LocalStack-compatible
+  emulator at `172.17.0.1:4566`, or set `HB_LOCAL_AWS_ENDPOINT` to wherever
+  yours listens, then run it. It proves the configuration is coherent and that
+  every data source resolves. **It does not prove anything about real AWS** —
+  the plan is against an emulator, and that difference is real.
+
 - **A guide for deploying on AWS.** `docs/on-aws.md` takes you from an empty
   account to a systemd timer running the bot every five minutes: the tools, what
   has to exist in the account first, the credentials to collect, then Packer,
@@ -35,6 +42,17 @@ first release's notes.
   credentials.
 
 ### Changed
+
+- **Both CloudWatch alarms are named after the deployment, not the instance.**
+  They were `awsec2-<instance-id>-status-check` and
+  `<instance-id>-highCPUUtilization`; they are now
+  `<name>-<environment>-status-check` and
+  `<name>-<environment>-cpu-utilization-high`. **On an existing deployment the
+  next apply destroys and recreates both alarms**, so read the plan first and
+  re-point anything keyed on the old names, such as a dashboard or an SNS
+  subscription. The old names changed whenever the instance was replaced, which
+  meant the alarms were replaced on every AMI build and could not be referenced
+  from a module.
 
 - **One CI workflow, and it runs `make check`.** `ci.yml` replaces
   `healthbot-ci.yml` and `infra-ci.yml`, so the runner checks exactly what

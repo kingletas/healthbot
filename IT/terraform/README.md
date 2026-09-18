@@ -1,5 +1,22 @@
 # terraform
 
+## Planning without an AWS account
+
+`make tf-local` plans this configuration against a local AWS emulator, so you can check it is coherent with no account and no credentials.
+
+Start a LocalStack-compatible emulator listening on `172.17.0.1:4566`, then:
+
+```bash
+make tf-local
+```
+
+If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On anything other than Linux you will need to, because `172.17.0.1` is the Docker bridge address and only exists there.
+
+**What it proves:** the configuration parses, every variable resolves, and all six data sources it reads are found. It generates its own root module outside this repository and never loads your `terraform.tfvars`, so no real credential can reach the emulator.
+
+**What it does not prove:** anything about real AWS. An emulator answers the same API shapes, not the same service. Treat a clean local plan as a reason to try a real one, never as a substitute for it.
+
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 Good ways to check for security or visualize what's going on
 checkov -d .

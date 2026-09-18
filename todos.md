@@ -25,6 +25,7 @@ Everything genuinely open, grouped by what unblocks it. What's already shipped i
     - [ ] collapse the four AWS providers to one default + one aliased reader. **This one does need state.** A provider alias *is* recorded, as the provider address of every resource created through it, so an alias unused in the configuration can still be the address a resource in state is bound to, and the local `terraform.tfstate` can't tell you, because it's empty: the real state is in the S3 backend.
     - [ ] stop seeding secret values entirely; `ignore_changes` is already in place. Changes real resources; needs the plan diff.
 - [ ] **Give the KMS key an explicit policy.** It runs on the default policy, which lets any IAM principal in the account use it if their own policy allows. A policy changes who can use the live key, so it needs the plan diff first. checkov's `CKV2_AWS_64` is skipped in `kms.tf` until then.
+- [ ] **Stop the cloud-init payload landing in state as cleartext.** `data.cloudinit_config.this` sets `base64_encode = true` and is passed to `user_data` rather than `user_data_base64`, so the provider warns the rendered value is stored unencrypted in state. No scanner reports it; it shows only in plan output.
 - [ ] **Rotate the secret's tokens automatically.** Secrets Manager rotation needs a function per vendor token, one each for Twilio, Slack, New Relic and Google, and there isn't one yet. checkov's `CKV2_AWS_57` is skipped in `main.tf` until then.
 
 ## Needs time and data
