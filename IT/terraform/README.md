@@ -16,8 +16,11 @@ If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On 
 
 **What it does not prove:** anything about real AWS. An emulator answers the same API shapes, not the same service. Treat a clean local plan as a reason to try a real one, never as a substitute for it.
 
+## The generated table below is generated
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+Everything between the markers is written by `terraform-docs` from `variables.tf` and the resources. Change it with `make tf-docs`, not by hand, and `make check` refuses a table that no longer matches.
+
+<!-- BEGIN_TF_DOCS -->
 Good ways to check for security or visualize what's going on
 checkov -d .
 terraform graph -type=plan | dot -Tpng -o graph.png
@@ -131,4 +134,4 @@ No modules.
 | Name | Description |
 | ---- | ----------- |
 | <a name="output_ec2-healthbot-instance"></a> [ec2-healthbot-instance](#output\_ec2-healthbot-instance) | n/a |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

@@ -95,7 +95,7 @@ Then, from the repo root:
 uv sync
 ```
 
-That creates `.venv` from `uv.lock` (runtime plus the dev group: ruff, pytest, pre-commit, ansible-lint, moto). Day-to-day commands:
+That creates `.venv` from `uv.lock` (runtime plus the dev group: ruff, pytest, ansible-lint, moto). Day-to-day commands:
 
 ```bash
 uv run pytest

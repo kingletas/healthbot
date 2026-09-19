@@ -67,6 +67,28 @@ packaging: ## Refuse a tracked file the wheel build would silently leave out
 		echo "$$swallowed"; exit 1; \
 	fi
 
+# terraform-docs owns everything between the markers in IT/terraform/README.md,
+# so regenerating is how that table changes and hand-editing it is overwritten.
+.PHONY: tf-docs
+tf-docs: ## Regenerate the generated table in IT/terraform/README.md
+	@terraform-docs markdown table --output-file README.md --output-mode inject $(ROOT_DIR)/IT/terraform
+
+.PHONY: tf-docs-check
+tf-docs-check: ## Refuse a generated table that no longer matches the variables
+	@terraform-docs markdown table --output-file README.md --output-mode inject --output-check $(ROOT_DIR)/IT/terraform
+
+# Every tracked file the shebang says is shell, since an extension is not a
+# reliable signal and IT/packer/bin holds two scripts that have none.
+.PHONY: shell
+shell: ## Shellcheck every tracked shell script
+	@scripts=$$(git ls-files | while read -r f; do \
+		case "$$f" in \
+			*.sh) echo "$$f" ;; \
+			*) if head -1 "$$f" 2>/dev/null | grep -qaE '^#!.*[ /](ba)?sh'; then echo "$$f"; fi ;; \
+		esac; \
+	done); \
+	if [ -n "$$scripts" ]; then shellcheck -x $$scripts; fi
+
 .PHONY: packer
 packer: ## Initialise the AMI template's plugins and validate it against the example vars
 	@cd $(ROOT_DIR)/IT/packer && packer fmt -check .
@@ -80,7 +102,7 @@ tf-local: ## Plan against the local AWS emulator: make tf-local ACTION=plan
 	@$(ROOT_DIR)/IT/terraform/tf-local.sh $(or $(ACTION),plan)
 
 .PHONY: check
-check: lint packaging test terraform packer ## Everything a commit has to pass
+check: lint shell packaging test terraform tf-docs-check packer ## Everything a commit has to pass
 
 # --- the local environment ---
 

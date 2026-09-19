@@ -49,6 +49,30 @@ first release's notes.
 
 ### Changed
 
+- **The repository no longer declares checks that nobody runs.**
+  `.pre-commit-config.yaml` listed sixteen hooks and not one had ever run: no
+  hook was installed, so the file described work nothing performed. Five of the
+  sixteen duplicated `make check`, one ran tfsec, which this project had already
+  dropped for being set to never fail, seven were whitespace and file hygiene,
+  two were Terraform static analysis nothing here invoked, and one,
+  `terraform_docs`, was the only thing keeping the generated table in
+  `IT/terraform/README.md` current. That is why the table sat four years stale,
+  advertising a variable that no longer exists. Both the config and the
+  `.pre-commit-hooks.yaml` beside it are gone, and `pre-commit` has left the dev
+  group with it, so `uv sync` installs seven fewer packages.
+
+- **`make check` runs the two checks that were worth keeping.** `terraform-docs`
+  now verifies the generated table and fails when it no longer matches
+  `variables.tf`, with `make tf-docs` to regenerate it. `shellcheck` runs over
+  every tracked file whose shebang says it is shell, which is four scripts that
+  nothing was reading before. CI installs `terraform-docs` pinned to a version
+  and a checksum, because the check compares generated output byte for byte.
+
+- **`CONTRIBUTING.md` describes what actually happens on a commit.** It said
+  `make check` was what the pre-commit hook ran. Nothing ran. It now says the
+  repository installs no hook, shows you how to wire one that calls the gate,
+  and names the four tools the gate needs on your `PATH`.
+
 - **Both CloudWatch alarms are named after the deployment, not the instance.**
   They were `awsec2-<instance-id>-status-check` and
   `<instance-id>-highCPUUtilization`; they are now
