@@ -49,6 +49,15 @@ first release's notes.
 
 ### Changed
 
+- **`make check` refuses a tracked Terraform state file, and the repository says
+  why that matters.** State records every value Terraform manages in plaintext,
+  and this configuration builds a Secrets Manager secret out of your vendor
+  tokens, so a state file from this tree is as sensitive as the tokens in it.
+  `.gitignore` has always kept state out of an ordinary `git add`; `make
+  tfstate` now refuses a forced one, in CI as well as locally. `SECURITY.md` and
+  `IT/terraform/README.md` say what to do about a local copy you find, which is
+  to rotate what is in it rather than to quietly delete the file.
+
 - **The repository no longer declares checks that nobody runs.**
   `.pre-commit-config.yaml` listed sixteen hooks and not one had ever run: no
   hook was installed, so the file described work nothing performed. Five of the

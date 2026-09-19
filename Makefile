@@ -77,6 +77,17 @@ tf-docs: ## Regenerate the generated table in IT/terraform/README.md
 tf-docs-check: ## Refuse a generated table that no longer matches the variables
 	@terraform-docs markdown table --output-file README.md --output-mode inject --output-check $(ROOT_DIR)/IT/terraform
 
+# Terraform writes every value it manages into state in plaintext, and this
+# configuration builds a Secrets Manager secret out of the vendor tokens, so its
+# state holds them. .gitignore stops an ordinary add; this stops a forced one.
+.PHONY: tfstate
+tfstate: ## Refuse a tracked Terraform state file
+	@tracked=$$(git ls-files '*.tfstate*'); \
+	if [ -n "$$tracked" ]; then \
+		echo "terraform state is tracked, and state holds secret values in plaintext:"; \
+		echo "$$tracked"; exit 1; \
+	fi
+
 # Every tracked file the shebang says is shell, since an extension is not a
 # reliable signal and IT/packer/bin holds two scripts that have none.
 .PHONY: shell
@@ -102,7 +113,7 @@ tf-local: ## Plan against the local AWS emulator: make tf-local ACTION=plan
 	@$(ROOT_DIR)/IT/terraform/tf-local.sh $(or $(ACTION),plan)
 
 .PHONY: check
-check: lint shell packaging test terraform tf-docs-check packer ## Everything a commit has to pass
+check: lint shell packaging tfstate test terraform tf-docs-check packer ## Everything a commit has to pass
 
 # --- the local environment ---
 

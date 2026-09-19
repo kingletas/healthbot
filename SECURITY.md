@@ -21,6 +21,15 @@ a future advisory against. If either matters where you work, scan the AMI with
 your own tool before you boot it, and rebuild when the base image is patched.
 This repository will not do it for you or tell you when it is due.
 
+## Terraform state holds your credentials
+
+Terraform writes the values it manages into state in plaintext, and this
+configuration builds a Secrets Manager secret out of your vendor tokens. **A
+state file from this tree is as sensitive as the tokens in it**, and so is any
+`.backup` next to it. Keep state in the S3 backend, and treat any local copy you
+find as an exposure to rotate rather than a file to tidy up.
+[IT/terraform/README.md](IT/terraform/README.md) has the detail.
+
 ## Reporting a vulnerability
 
 **Don't open a public issue.**
