@@ -9,6 +9,7 @@ from moto import mock_aws
 from healthbot.aws.parameter_store import ParameterStore
 from healthbot.aws.secrets_manager import SecretsManager
 from healthbot.checks.aws import CloudWatchCheck, EC2Check
+from healthbot.errors import ConfigurationError
 
 
 @pytest.fixture(autouse=True)
@@ -118,3 +119,26 @@ def test_secrets_are_fetched_fresh_and_never_cached():
     assert helper.get_secret("hb-test") == {"slack_token": "xoxb-1"}
     # The plaintext-blob-in-Redis cache is gone with the inheritance
     assert not hasattr(helper, "cache")
+
+
+@mock_aws
+def test_a_missing_parameter_names_it_instead_of_raising_indexerror():
+    # SSM does not raise for a name that is not there: it returns it under
+    # InvalidParameters, and indexing the empty Parameters list threw an
+    # IndexError from inside a caching helper, naming nothing.
+    helper = ParameterStore(cache=FakeCache())
+
+    with pytest.raises(ConfigurationError) as err:
+        helper.get_parameter("/healthbot-sm/manager/tag_name")
+
+    assert "/healthbot-sm/manager/tag_name" in str(err.value)
+    assert "Create it" in str(err.value)
+
+
+@mock_aws
+def test_a_missing_secret_says_which_one_and_what_to_do():
+    with pytest.raises(ConfigurationError) as err:
+        SecretsManager().get_secret("healthbot-not-there")
+
+    assert "healthbot-not-there" in str(err.value)
+    assert "Create it" in str(err.value)

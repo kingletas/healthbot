@@ -1,11 +1,11 @@
 # Third party imports
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, NoCredentialsError
 
 from healthbot.aws.client import AwsClient
 from healthbot.cache import Cache
 
 # Local imports
-from healthbot.logs import logger
+from healthbot.errors import ConfigurationError
 
 
 class ParameterStore(AwsClient):
@@ -29,13 +29,30 @@ class ParameterStore(AwsClient):
                 # Get the requested parameter
                 response = self.client.get_parameters(Names=[param], WithDecryption=with_decryption)
 
-            except ClientError as e:
-                logger.error(e)
-                raise e
+            except NoCredentialsError as err:
+                raise ConfigurationError(
+                    "There are no AWS credentials, so the run settings can't be read. "
+                    "Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, or point "
+                    "AWS_ENDPOINT_URL at a local emulator."
+                ) from err
 
-            else:
-                cached = response["Parameters"][0]["Value"]
-                if not is_sensitive:
-                    self.cache.set(param, cached)
+            except ClientError as err:
+                code = err.response.get("Error", {}).get("Code", "unknown")
+                raise ConfigurationError(
+                    f"AWS refused to read the setting {param} ({code}). "
+                    "Check the run's IAM permissions and its region."
+                ) from err
+
+            # SSM does not raise for a name that does not exist. It returns
+            # the name under InvalidParameters and no value for it.
+            if param in response.get("InvalidParameters", []):
+                raise ConfigurationError(
+                    f"The setting {param} is not in AWS Parameter Store. "
+                    "Create it, or point HB_PARAM_PREFIX at the prefix that holds yours."
+                )
+
+            cached = response["Parameters"][0]["Value"]
+            if not is_sensitive:
+                self.cache.set(param, cached)
 
         return cached

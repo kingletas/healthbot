@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # is configured
     otel_enabled: bool | None = None
 
+    # How much the console says. INFO keeps a healthy run quiet, which is what
+    # every document promises; the log file stays at DEBUG either way.
+    log_level: str = "INFO"
+
     # Where run logs and failed-checkout evidence are written. The default is
     # outside the installed package: a wheel install put both inside
     # site-packages, which a read-only install refuses and nobody thinks to
