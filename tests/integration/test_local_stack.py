@@ -5,7 +5,7 @@ End-to-end against the IT/local docker stack: Mattermost, the stub APIs and
 the fake storefront, plus the shared MiniStack that plays AWS. Excluded from
 the default run; needs:
 
-    docker compose -f ~/Services/dev-services/docker-compose.yaml up -d
+    docker run -d --name ministack -p 4566:4566 localstack/localstack:4.9
     cd IT/local && docker compose up -d --build
     uv run healthbot-local seed
     uv run pytest -m integration

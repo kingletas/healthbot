@@ -14,7 +14,7 @@ otel-collector ──:8889──> prometheus (rules: burn rates, compliance, dea
 
 ## Run it
 
-> `../local/docker-compose.yml` *includes* this file, so if you want the full local environment (Mattermost, the API stubs, and the shared MiniStack playing AWS) start the stack from `IT/local` instead, because running both compose projects at once collides on every published port. This stack alone is the right choice when all you need is the telemetry pipeline and the demo emitter.
+> `../local/docker-compose.yml` *includes* this file, so if you want the full local environment (Mattermost, the API stubs, and a shared emulator playing AWS) start the stack from `IT/local` instead, because running both compose projects at once collides on every published port. This stack alone is the right choice when all you need is the telemetry pipeline and the demo emitter.
 
 ```bash
 docker compose up -d

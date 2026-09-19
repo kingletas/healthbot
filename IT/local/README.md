@@ -2,11 +2,11 @@
 
 Everything a real `healthbot` run touches, emulated on one laptop. Where `IT/observability` renders what the bot *emits*, this stack stands in for what the bot *consumes*, so the production `main()`, all five checks, runs end to end with exit codes, alerts and telemetry you can watch.
 
-AWS is played by **MiniStack, which this compose file does not define**. It is the shared workstation emulator at `~/Services/dev-services`, started once for the machine rather than once per project, and reached on the docker bridge address `172.17.0.1:4566`. Start it before this stack.
+AWS is played by **an emulator this compose file does not define**. Anything serving the LocalStack API on `172.17.0.1:4566` will do, and it is deliberately outside this project so one emulator can serve every project on a machine. Start it before this stack.
 
 | Stand-in | Plays | Where |
 |---|---|---|
-| MiniStack (shared, from `dev-services`) | SSM Parameter Store, Secrets Manager, EC2, CloudWatch, SNS | `172.17.0.1:4566` |
+| a LocalStack-compatible emulator (shared, defined elsewhere) | SSM Parameter Store, Secrets Manager, EC2, CloudWatch, SNS | `172.17.0.1:4566` |
 | Mattermost (preview image) | Slack, with messages landing in `~town-square` | `:8065` |
 | stub container | the storefront (Playwright checkout journey and the canary sweep) | `:8080` |
 | stub container | New Relic v2 API, GA discovery/token/realtime, the Slack→Mattermost shim, chaos switches | `:8081` |
@@ -14,10 +14,12 @@ AWS is played by **MiniStack, which this compose file does not define**. It is t
 
 ## Quickstart
 
-The shared emulator first, since it is not part of this compose project:
+The shared emulator first, since it is not part of this compose project. Pin a
+version: `latest` wants a paid auth token and quits on start without one, and an
+emulator much older than this one rejects the CloudWatch writes `seed` makes.
 
 ```bash
-docker compose -f ~/Services/dev-services/docker-compose.yaml up -d ministack
+docker run -d --name ministack -p 4566:4566 localstack/localstack:4.9
 ```
 
 ```bash
@@ -85,11 +87,11 @@ The unit suite (`uv run pytest`, no marker) never touches this stack, because `-
 
 ## Gotchas
 
-- **The AWS emulator is shared and lives elsewhere**, in `~/Services/dev-services`, one MiniStack for the whole workstation. Nothing here defines it, so bring it up separately, and on a collision with another project leave it running and agree who turns it off. It replaced a private LocalStack 4.9 that had been exited for eleven hours with nobody owning it; the auth-token constraint that forced that pin is gone, because MiniStack has no token concept.
-- **The health path is still `/_localstack/health`, and that is correct.** MiniStack serves LocalStack's API surface on the same port, so the path is compatibility, not a leftover. Do not rename it, and do not look for `cloudwatch` in the health list either: MiniStack names services by their AWS API namespace, so CloudWatch appears as `monitoring`.
+- **The AWS emulator is shared and lives outside this project**, one for the whole machine. Nothing here defines it, so bring it up separately, and on a collision with another project leave it running and agree who turns it off. Set `HB_LOCAL_AWS_ENDPOINT` when yours is not on `172.17.0.1:4566`; the seeder and the integration tests both read it.
+- **Do not look for `cloudwatch` in the emulator's health list.** It names services by their AWS API namespace, so CloudWatch appears as `monitoring`.
 - **The CloudWatch leg depends on the emulator accepting publishes into `AWS/*` namespaces**, which real AWS refuses. `test_localstack_accepts_aws_namespace_datapoints` exists to name this if an emulator upgrade ever regresses it; it keeps its original name because it guards the behaviour, not the vendor.
-- **A datapoint is not readable the instant it is published.** MiniStack indexes `put_metric_data` with a sub-second lag, so publishing and reading back in the same breath can return an empty window. Nothing in the normal flow is that tight, since `seed` and a run are seconds apart, but a test that does both in one function needs to allow for it.
-- **The seeded AWS resources now sit in a shared account.** Every name HealthBot creates is prefixed or suffixed distinctly (`/healthbot-sm/manager/*`, `healthbot-local`, `healthbot-local-alerts`, the `EXAMPLE-WEB-01` instance tagged `Local-FLEET`), and seeding stays idempotent, so a reseed does not disturb another project. MiniStack supports multi-account and multi-region if stronger isolation is ever needed.
+- **A datapoint is not readable the instant it is published.** The emulator indexes `put_metric_data` with a sub-second lag, so publishing and reading back in the same breath can return an empty window. Nothing in the normal flow is that tight, since `seed` and a run are seconds apart, but a test that does both in one function needs to allow for it.
+- **The seeded AWS resources sit in an account shared with other projects.** Every name HealthBot creates is prefixed or suffixed distinctly (`/healthbot-sm/manager/*`, `healthbot-local`, `healthbot-local-alerts`, the `EXAMPLE-WEB-01` instance tagged `Local-FLEET`), and seeding stays idempotent, so a reseed does not disturb another project. LocalStack supports multi-account and multi-region if stronger isolation is ever needed.
 - **slack_sdk sends `chat.postMessage` as a JSON body when blocks are attached**, urlencoded otherwise. The shim accepts both; the first version read only form data and every alert degraded to a placeholder, and that placeholder contained the word "HealthBot", which let the original content assertion pass. Hence the pointedly specific asserts in `test_staged_outage_pages_into_mattermost`.
 - **`PUBLIC_API_BASE` on the stub container must be the host-visible base** (`http://localhost:8081`), because it is templated into the GA discovery document that the host-side bot follows back. The compose-internal hostname would only work for another container.
 - **`healthbot-local` cannot be pointed at real AWS.** Clients are built with an explicit endpoint pinned to a local host and static dummy credentials; a non-local endpoint is a hard refusal, no override flag. This is deliberate. See the standing rule about never executing against AWS.

@@ -1,7 +1,7 @@
 """
 Healthy means CloudWatch has a recent datapoint, not that the process is up.
 
-A feeder that is running but cannot reach MiniStack leaves the AWS check
+A feeder that is running but cannot reach the AWS emulator leaves the AWS check
 reading "could not collect", which alerts about the wrong thing. Liveness
 would report that container as fine; asking the emulator what it actually
 holds does not.

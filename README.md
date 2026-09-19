@@ -3,7 +3,7 @@
 [![CI](https://github.com/kingletas/healthbot/actions/workflows/ci.yml/badge.svg)](https://github.com/kingletas/healthbot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-HealthBot is a Python SRE bot that probes the storefront from the outside, through New Relic, AWS CloudWatch, Google Analytics, a real-browser checkout journey and a canary URL sweep. It evaluates the results against declared SLOs, emits OpenTelemetry, and notifies through Slack, SMS and SNS. It ships its own infrastructure: Terraform, Packer and Ansible under `IT/`, a local observability stack under `IT/observability/`, and a full local environment under `IT/local/` (Mattermost, API stubs, and the shared MiniStack playing AWS) in which the production bot runs end to end.
+HealthBot is a Python SRE bot that probes the storefront from the outside, through New Relic, AWS CloudWatch, Google Analytics, a real-browser checkout journey and a canary URL sweep. It evaluates the results against declared SLOs, emits OpenTelemetry, and notifies through Slack, SMS and SNS. It ships its own infrastructure: Terraform, Packer and Ansible under `IT/`, a local observability stack under `IT/observability/`, and a full local environment under `IT/local/` (Mattermost, API stubs, and a shared emulator playing AWS) in which the production bot runs end to end.
 
 **New here? [docs/from-nothing.md](docs/from-nothing.md) gets you from a clone to a real alert in about twenty minutes, with no AWS account, no credentials, and no storefront of your own.**
 
@@ -63,7 +63,7 @@ The full local stack (OTel Collector → Prometheus with its rules → Grafana w
 
 ## Running it locally, for real
 
-`IT/local/` extends the observability stack into a complete local environment: MiniStack plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS) from the shared `dev-services` stack, Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
+`IT/local/` extends the observability stack into a complete local environment: a shared LocalStack-compatible emulator plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS), Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
 
 ```bash
 cd IT/local && docker compose up -d --build

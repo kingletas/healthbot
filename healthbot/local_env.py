@@ -1,13 +1,11 @@
 """
 Provision the IT/local stack so a real `healthbot` run works end to end on a
-laptop: MiniStack plays AWS, Mattermost plays Slack, and the stub container
+laptop: an AWS emulator plays AWS, Mattermost plays Slack, and the stub container
 plays New Relic, Google Analytics and the storefront.
 
-MiniStack is the shared workstation emulator at
-~/Services/dev-services, one instance for the machine rather than one
-per project, reached on the docker bridge address so containers and the
-host resolve it identically. It is LocalStack-API-compatible, which is why
-the health path below is still /_localstack/health.
+AWS is any LocalStack-compatible emulator, defined outside this project so
+one instance serves the whole machine, and reached on the docker bridge
+address so containers and the host resolve it identically.
 
 Usage:
     healthbot-local seed            # create params, secret, EC2, SNS, metrics
@@ -16,7 +14,7 @@ Usage:
     healthbot-local run-env         # print the env vars a local run needs
 
 Environment overrides:
-    HB_LOCAL_AWS_ENDPOINT   MiniStack URL        (default http://172.17.0.1:4566)
+    HB_LOCAL_AWS_ENDPOINT   AWS emulator URL     (default http://172.17.0.1:4566)
     HB_LOCAL_API_BASE       stub API base        (default http://localhost:8081)
     HB_LOCAL_STORE_BASE     fake storefront      (default http://localhost:8080)
     HB_LOCAL_MATTERMOST     Mattermost URL       (default http://localhost:8065)
@@ -60,10 +58,10 @@ INSTANCE_NAME = "EXAMPLE-WEB-01"
 DB_CLUSTER = "example-aurora-local"
 TOPIC_NAME = "healthbot-local-alerts"
 
-# 172.17.0.1 is the docker bridge address the shared dev-services stack
-# binds to. It is reachable from the host and from every container, and not
-# from the LAN. It is a local address in exactly the sense this guard
-# means; no public AWS endpoint can resolve to it.
+# 172.17.0.1 is the docker bridge address a shared emulator binds to. It is
+# reachable from the host and from every container, and not from the LAN. It
+# is a local address in exactly the sense this guard means; no public AWS
+# endpoint can resolve to it.
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "172.17.0.1", "localstack", "ministack"}
 
 
@@ -285,7 +283,7 @@ def status() -> int:
     good = True
 
     good &= probe(
-        # The path stays /_localstack/health: MiniStack serves LocalStack's
+        # The path stays /_localstack/health: the emulator serves LocalStack's
         # API surface unchanged, and renaming it would probe nothing.
         "ministack",
         f"{AWS_ENDPOINT}/_localstack/health",

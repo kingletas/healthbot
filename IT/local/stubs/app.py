@@ -15,7 +15,7 @@ Every non-AWS dependency of a HealthBot run, in one process:
                        nr_slow) so alerts can be staged on purpose
            /health     liveness for healthbot-local status
 
-AWS itself is MiniStack's job, not this file's. Runs only inside the
+AWS itself is the emulator's job, not this file's. Runs only inside the
 IT/local compose stack; nothing here is deployable.
 """
 

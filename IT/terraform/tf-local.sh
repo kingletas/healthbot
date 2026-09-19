@@ -66,7 +66,7 @@ except Exception:
     sys.exit(1)
 PY
         echo "The local AWS emulator is not answering at ${ENDPOINT}." >&2
-        echo "Start MiniStack (or any LocalStack-compatible emulator) on that endpoint first." >&2
+        echo "Start a LocalStack-compatible emulator on that endpoint first." >&2
         exit 1
     }
 }
