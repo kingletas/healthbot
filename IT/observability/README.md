@@ -1,6 +1,6 @@
 # HealthBot local observability stack
 
-OTLP in, Grafana out: the bot (or the synthetic demo) emits OpenTelemetry to the collector, the collector exposes Prometheus metrics, Prometheus computes SLO burn rates and alerts, Grafana shows the two provisioned dashboards.
+OTLP in, Grafana out: the bot (or the synthetic demo) emits OpenTelemetry to the collector, the collector exposes Prometheus metrics, Prometheus computes SLO burn rates and alerts, Grafana shows the provisioned dashboards.
 
 ```text
 healthbot / healthbot-demo / healthbot-dora

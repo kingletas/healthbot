@@ -59,7 +59,7 @@ Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5
 
 DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR.
 
-The full local stack (OTel Collector → Prometheus with its rules → Grafana with two provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
+The full local stack (OTel Collector → Prometheus with its rules → Grafana with its provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
 
 ## Running it locally, for real
 

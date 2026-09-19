@@ -117,7 +117,7 @@ looking for output:
 echo $?
 ```
 
-Open <http://localhost:3000> for Grafana, where two provisioned dashboards show
+Open <http://localhost:3000> for Grafana, where the provisioned dashboards show
 what the run emitted. If you'd rather see the whole pipeline move without
 waiting for real runs, `make demo` drives it with synthetic ones through the same
 production code path.
@@ -136,7 +136,7 @@ is the distinction that matters: a non-zero exit means HealthBot broke, not that
 store did. What changes is that an alert is now waiting in Mattermost's
 `~town-square` at <http://localhost:8065> (`sre@local.test` /
 `SuperSecret-123`). It opens with the line a locked phone would show, which
-names what is failing and the limit it went past.
+names what is failing, and the limit it passed where the signal has one.
 
 A failed checkout journey also leaves evidence in the log directory: a
 screenshot, the page HTML, and a Playwright trace you can replay. `make run-env`
