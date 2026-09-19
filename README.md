@@ -63,7 +63,7 @@ The full local stack (OTel Collector → Prometheus with its rules → Grafana w
 
 ## Running it locally, for real
 
-`IT/local/` extends the observability stack into a complete local environment: a shared LocalStack-compatible emulator plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS), Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
+`IT/local/` extends the observability stack into a complete local environment: a shared MiniStack plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS, RDS), Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
 
 ```bash
 cd IT/local && docker compose up -d --build
