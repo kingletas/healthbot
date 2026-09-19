@@ -128,3 +128,23 @@ def test_disabled_without_endpoint(monkeypatch):
     assert telemetry.is_enabled() is True
     monkeypatch.setenv("HB_OTEL_ENABLED", "0")
     assert telemetry.is_enabled() is False
+
+
+def test_instance_id_is_the_hostname_unless_set(monkeypatch):
+    monkeypatch.delenv("HB_OTEL_INSTANCE_ID", raising=False)
+    monkeypatch.setattr(telemetry.socket, "gethostname", lambda: "a-host")
+    assert telemetry.instance_id() == "a-host"
+    monkeypatch.setenv("HB_OTEL_INSTANCE_ID", "chosen")
+    assert telemetry.instance_id() == "chosen"
+
+
+def test_counters_and_histograms_are_exported_as_deltas():
+    # A cumulative counter restarts at zero with every oneshot process, so a
+    # rate over it is zero for ever and the burn-rate alerts cannot fire.
+    from opentelemetry.sdk.metrics import Counter, Histogram, UpDownCounter
+    from opentelemetry.sdk.metrics.export import AggregationTemporality
+
+    temporality = telemetry.delta_temporality()
+    assert temporality[Counter] is AggregationTemporality.DELTA
+    assert temporality[Histogram] is AggregationTemporality.DELTA
+    assert temporality[UpDownCounter] is AggregationTemporality.CUMULATIVE

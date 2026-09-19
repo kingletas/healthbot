@@ -6,9 +6,14 @@ set the SRE stack consumes (Prometheus via the OTel Collector). Disabled by
 default: nothing is exported unless HB_OTEL_ENABLED is truthy or an
 OTEL_EXPORTER_OTLP_ENDPOINT is set, so a host without a collector behaves
 exactly as before.
+
+Counters and histograms are exported as deltas under a stable instance id, so
+the runs of a five-minute oneshot accumulate into one series downstream rather
+than scattering into one single-sample series per process.
 """
 
 # Standard library imports
+import socket
 import time
 from contextlib import contextmanager
 from os import environ
@@ -111,6 +116,40 @@ def is_enabled() -> bool:
     return bool(environ.get("OTEL_EXPORTER_OTLP_ENDPOINT"))
 
 
+def instance_id() -> str:
+    """
+    The identity every run on this machine reports under, so a collector can
+    join them into one series instead of one series per process.
+    """
+    return get_settings().otel_instance_id or socket.gethostname()
+
+
+def delta_temporality() -> dict:
+    """
+    Maps every counter and histogram to delta, so each run exports what it
+    measured rather than a total that restarts at zero with the process.
+    """
+    # Imported here so the disabled path never touches the SDK
+    from opentelemetry.sdk.metrics import (
+        Counter,
+        Histogram,
+        ObservableCounter,
+        ObservableUpDownCounter,
+        UpDownCounter,
+    )
+    from opentelemetry.sdk.metrics.export import AggregationTemporality
+
+    return {
+        Counter: AggregationTemporality.DELTA,
+        Histogram: AggregationTemporality.DELTA,
+        ObservableCounter: AggregationTemporality.DELTA,
+        # An up-down counter has no meaningful delta sum, and nothing here
+        # uses one; cumulative is the specification's own preference.
+        UpDownCounter: AggregationTemporality.CUMULATIVE,
+        ObservableUpDownCounter: AggregationTemporality.CUMULATIVE,
+    }
+
+
 def setup_telemetry() -> bool:
     """
     Install the SDK providers. Returns whether telemetry is live. Idempotent.
@@ -128,10 +167,14 @@ def setup_telemetry() -> bool:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+    # service.instance.id is set explicitly because the SDK otherwise invents
+    # a fresh UUID per process, and a five-minute oneshot would then export a
+    # new series on every run, each holding one sample.
     resource = Resource.create(
         {
             "service.name": __app_name__,
             "service.version": __version__,
+            "service.instance.id": instance_id(),
             "deployment.environment": get_settings().environment,
         }
     )
@@ -140,7 +183,12 @@ def setup_telemetry() -> bool:
     tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     trace.set_tracer_provider(tracer_provider)
 
-    reader = PeriodicExportingMetricReader(OTLPMetricExporter())
+    # Delta is set here rather than left to OTEL_EXPORTER_OTLP_METRICS_
+    # TEMPORALITY_PREFERENCE, because a deployment that forgets the variable
+    # gets counters that no rate() can read and nothing says so.
+    reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(preferred_temporality=delta_temporality())
+    )
     metrics.set_meter_provider(
         MeterProvider(resource=resource, metric_readers=[reader], views=duration_views())
     )

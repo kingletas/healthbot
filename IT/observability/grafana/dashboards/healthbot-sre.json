@@ -215,7 +215,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, check) (max_over_time(healthbot_check_duration_seconds_bucket[15m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, check) (rate(healthbot_check_duration_seconds_bucket[15m])))",
           "legendFormat": "{{check}}",
           "refId": "A"
         }
@@ -454,7 +454,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(healthbot_heartbeat_total) or on() vector(0)",
+          "expr": "round(sum(increase(healthbot_heartbeat_total[$__range]))) or on() vector(0)",
           "legendFormat": "runs reporting",
           "refId": "A"
         }

@@ -216,7 +216,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "count(healthbot_heartbeat_total) or on() vector(0)",
+                    "expr": "round(sum(increase(healthbot_heartbeat_total[$__range]))) or on() vector(0)",
                     "refId": "A",
                     "instant": true,
                     "range": false
@@ -264,7 +264,7 @@
                 },
                 "overrides": []
             },
-            "description": "How many runs are inside the collector's 10-minute retention. The bot is a oneshot: every run is a separate process and gets its own series, so at a 5-minute cadence a healthy value is 2 or 3. Zero means the timer stopped.",
+            "description": "How many runs reported inside the dashboard's time range. At the five-minute timer cadence a healthy hour is about twelve. Zero means the timer stopped, or the runs are dying before they can report.",
             "options": {
                 "reduceOptions": {
                     "calcs": [
@@ -573,7 +573,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (check, status) (healthbot_check_result_total)",
+                    "expr": "round(sum by (check, status) (increase(healthbot_check_result_total[$__range])))",
                     "refId": "A",
                     "legendFormat": "{{check}} \u00b7 {{status}}",
                     "instant": true,
@@ -682,7 +682,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (check) (healthbot_check_result_total{status=\"error\"})",
+                    "expr": "round(sum by (check) (increase(healthbot_check_result_total{status=\"error\"}[15m])))",
                     "refId": "A",
                     "legendFormat": "{{check}}"
                 }
@@ -728,7 +728,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (outcome) (healthbot_heartbeat_total)",
+                    "expr": "round(sum by (outcome) (increase(healthbot_heartbeat_total[15m])))",
                     "refId": "A",
                     "legendFormat": "{{outcome}}"
                 }
@@ -778,7 +778,7 @@
                     }
                 ]
             },
-            "description": "One tick per completed run, split by whether the run finished or died. A line that stops climbing is the timer having stopped firing."
+            "description": "Completed runs in a rolling fifteen minutes, split by whether the run finished or died. A line that falls to zero is the timer having stopped firing."
         },
         {
             "id": 10,
@@ -801,7 +801,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum(healthbot_run_duration_seconds_sum) / sum(healthbot_run_duration_seconds_count)",
+                    "expr": "sum(increase(healthbot_run_duration_seconds_sum[$__range])) / sum(increase(healthbot_run_duration_seconds_count[$__range]))",
                     "refId": "A",
                     "legendFormat": "mean run",
                     "instant": true,

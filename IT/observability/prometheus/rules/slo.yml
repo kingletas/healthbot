@@ -115,11 +115,12 @@ groups:
                     before it becomes a page.
 
           # The dead-man's switch: HealthBot has watched the estate for
-          # years with nothing watching HealthBot. Every oneshot run is its
-          # own single-sample series so rate() is zero on a healthy bot, and
-          # absence is the only signal left: it arrives one metric_expiration
-          # after the last run, and the for outlasts the timer's 5m period
-          # plus its 60s RandomizedDelaySec.
+          # years with nothing watching HealthBot. It stays on absence rather
+          # than a rate even though the counters now accumulate, because the
+          # collector drops a series one metric_expiration after its last
+          # update and a rate over a series that is gone is empty, not zero.
+          # It arrives one metric_expiration after the last run, and the for
+          # outlasts the timer's 5m period plus its 60s RandomizedDelaySec.
           - alert: HealthBotSilent
             expr: absent(healthbot_heartbeat_total)
             for: 10m

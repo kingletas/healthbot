@@ -106,6 +106,34 @@ first release's notes.
   path, or two people deploying from two laptops and each keeping half of it.
   `README.md`, `docs/on-aws.md` and `healthbot/dora.py` now all say so where you
   would meet the journal.
+- **Every metric changes shape. Read this before you next open your own
+  dashboard.** The bot used to export one set of counters per run, each under a
+  random `instance` label, holding the single number that run measured. It now
+  exports what each run measured as a delta under a stable `instance` label, and
+  the collector adds the deltas together, so one counter per machine climbs the
+  way a counter is supposed to. No metric is renamed and no label is removed.
+  What changes is how you read them:
+
+    - `rate()` and `increase()` work. They returned zero or NaN on everything
+      before, which is the defect underneath both of the fixes below.
+    - `instance` is now the hostname, not a fresh UUID per run. Set
+      `HB_OTEL_INSTANCE_ID` if two bots watch different sites from one host.
+    - **`count(healthbot_heartbeat_total)` no longer counts runs.** It was the
+      number of live per-run series and it is now 1, because there is one
+      series. Counting runs is `increase(healthbot_heartbeat_total[...])`, and
+      the same goes for any panel of yours that counted or summed series to
+      mean *events in the collector's window*. The four dashboards here are
+      already converted.
+    - Absence is unchanged, so `HealthBotSilent` and everything else that reads
+      liveness still behaves. A series still disappears one `metric_expiration`
+      after the last run that touched it, measured at eleven minutes for a ten
+      minute setting.
+    - Telemetry that is off stays off. None of this happens without
+      `HB_OTEL_ENABLED=1` and an endpoint.
+
+  **History is not converted.** The old per-run series stay in Prometheus with
+  their old shape, so a window spanning the change reads across both until the
+  old data ages out.
 
 - **`make check` refuses a tracked Terraform state file, and the repository says
   why that matters.** State records every value Terraform manages in plaintext,
@@ -305,6 +333,25 @@ first release's notes.
   plan locally, and both were reporting honestly.
 
 
+- **The burn-rate alerts can fire.** `HealthBotSLOFastBurn` and
+  `HealthBotSLOSlowBurn` never could. In production the bot is a systemd
+  oneshot, so every run was a separate process exporting its own series with a
+  single sample in it, and every SLO rule is a `rate()` or an `increase()` over
+  those counters. All five rates were zero, the error ratio, the burn rate and
+  the 30-day compliance were all NaN, and NaN is not greater than a threshold,
+  so both alerts stayed silent through a bot that was alive and failing every
+  check. **That is the case these alerts exist for**: a crashing run still sends
+  a heartbeat, so the dead-man's switch is correctly quiet and nothing else was
+  watching. Runs now accumulate into one series and the rules read what they
+  were always meant to read.
+- **The incident dashboard no longer reports a dead monitor as a healthy one.**
+  *Store, or the monitor?* asked for a count of bad monitor runs and treated an
+  empty answer as zero, so a bot that had stopped reporting read **Monitor
+  healthy, look at the store**, which is the opposite of what had happened. The
+  worst-burn dial read 0.0 in the same state, and the two failing-check tiles
+  read *None*. All four now tell no data apart from no failures and say **NOT
+  REPORTING**, using the same liveness test the operations dashboard already
+  used, so the two screens cannot disagree about whether the bot is alive.
 - **`make tf-local` reseeds the emulator instead of trusting a stale state
   file.** The emulator is a container and loses its resources when it restarts,
   while the harness kept a state file claiming they were still there. The next

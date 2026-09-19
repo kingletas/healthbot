@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # is configured
     otel_enabled: bool | None = None
 
+    # Who this monitor reports as, stamped as service.instance.id and exported
+    # as the Prometheus instance label. It defaults to the hostname, which is
+    # the identity every run on one machine shares; set it when two bots watch
+    # different sites from the same host.
+    otel_instance_id: str | None = None
+
     # How much the console says. INFO keeps a healthy run quiet, which is what
     # every document promises; the log file stays at DEBUG either way.
     log_level: str = "INFO"
