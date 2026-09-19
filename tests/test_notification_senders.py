@@ -227,9 +227,9 @@ def test_the_alert_carries_a_text_fallback_for_push_and_screen_readers():
     down = SlackMessage(
         message_data={**healthy, "is_checkout_up": False},
         channel="#c",
-        failing_lines=["Checkout: failing"],
+        failing_lines=["Checkout didn't complete"],
     )
-    assert down.text == "HealthBot: Checkout: failing"
+    assert down.text == "HealthBot: Checkout didn't complete"
 
 
 def test_a_latency_page_never_says_the_checks_passed():
@@ -279,7 +279,7 @@ def test_an_uncollected_signal_says_so_rather_than_naming_a_number():
     failing = failing_signals(blind, THRESHOLDS)
     lines = describe_failing(failing, blind, THRESHOLDS)
 
-    assert "App response time: couldn't be collected" in lines
+    assert "App response time couldn't be collected" in lines
 
 
 def test_an_untagged_instance_is_headed_by_its_id_not_a_sentence():

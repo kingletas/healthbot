@@ -62,14 +62,15 @@ class Signal(NamedTuple):
     label: str
     unit: str
     limit_key: str | None
+    failure: str
     is_failing: Callable
 
     def describe(self, value, thresholds: dict) -> str:
-        """One line: what the signal is, what it read, and what its limit is."""
+        """One line a person can act on: what is wrong, and what the limit was."""
         if value is None:
-            return f"{self.label}: couldn't be collected"
+            return f"{self.label} couldn't be collected"
         if self.limit_key is None:
-            return f"{self.label}: failing"
+            return self.failure
         limit = thresholds.get(self.limit_key)
         return f"{self.label}: {value}{self.unit}, limit {limit}{self.unit}"
 
@@ -79,24 +80,39 @@ class Signal(NamedTuple):
 # with no branch behind it never fails and nothing says so. One table cannot,
 # and it is what makes the gate and the alert agree on what is wrong.
 SIGNALS: dict = {
-    "is_checkout_up": Signal("Checkout", "", None, lambda value, limits: value is False),
-    "canary_ok": Signal("Canary URLs", "", None, lambda value, limits: not value),
+    "is_checkout_up": Signal(
+        "Checkout",
+        "",
+        None,
+        "Checkout didn't complete",
+        lambda value, limits: value is False,
+    ),
+    "canary_ok": Signal(
+        "Canary URLs",
+        "",
+        None,
+        "A canary URL didn't answer 200",
+        lambda value, limits: not value,
+    ),
     "ga_active_users": Signal(
         "Active users",
         "",
         "active_users_alert",
+        "",
         lambda value, limits: value >= limits["active_users_alert"],
     ),
     "app_response_time": Signal(
         "App response time",
         "ms",
         "app_response_alert",
+        "",
         lambda value, limits: float(value) >= limits["app_response_alert"],
     ),
     "web_response_time": Signal(
         "Web response time",
         "s",
         "web_response_alert",
+        "",
         lambda value, limits: float(value) >= limits["web_response_alert"],
     ),
 }
