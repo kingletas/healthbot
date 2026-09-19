@@ -153,6 +153,11 @@ first release's notes.
   printing a metric key and leaving the colour to carry the verdict. The
   `healthbot_slo_target` gauge now carries `description` and `objective`
   labels to make that possible.
+- **The DORA panels can show what they plot.** Four metrics spanning six
+  orders of magnitude shared one linear axis, so three of them were a flat
+  line on the floor. They are now two panels, one per unit, and the four
+  headline stats carry the published performance bands so a number arrives
+  with a scale attached.
 - **A gauge panel draws one line, not one per run.** Each oneshot run emits
   its own series, so the active-users and response-time panels drew a fresh
   differently-coloured line for every run inside the collector's retention.

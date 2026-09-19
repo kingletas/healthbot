@@ -28,7 +28,30 @@
         "h": 6
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.03333333333333333
+              },
+              {
+                "color": "yellow",
+                "value": 0.14285714285714285
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "targets": [
@@ -37,7 +60,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_dora_metric{metric=\"deployment_frequency_per_day\"}",
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"deployment_frequency_per_day\"})",
           "legendFormat": "per day",
           "refId": "A"
         }
@@ -48,9 +71,11 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "graphMode": "none"
       },
-      "id": 1
+      "id": 1,
+      "description": "Deploys per day over the window. Elite is on demand, at least daily; high is weekly or better; medium is monthly or better. Bands are the four performance levels published in the 2021 State of DevOps report."
     },
     {
       "title": "Lead time for changes",
@@ -67,7 +92,28 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "orange",
+                "value": 604800
+              },
+              {
+                "color": "red",
+                "value": 2592000
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -77,7 +123,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_dora_metric{metric=\"lead_time_seconds\"}",
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"lead_time_seconds\"})",
           "legendFormat": "lead time",
           "refId": "A"
         }
@@ -88,9 +134,11 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "graphMode": "none"
       },
-      "id": 2
+      "id": 2,
+      "description": "Commit to deploy. Elite is under an hour, high under a week, medium under a month. Bands are the four performance levels published in the 2021 State of DevOps report."
     },
     {
       "title": "Change failure rate",
@@ -107,7 +155,20 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.15
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -117,7 +178,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_dora_metric{metric=\"change_failure_ratio\"}",
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"change_failure_ratio\"})",
           "legendFormat": "failure rate",
           "refId": "A"
         }
@@ -128,9 +189,11 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "graphMode": "none"
       },
-      "id": 3
+      "id": 3,
+      "description": "Share of deploys that needed a fix. Elite is 15% or under. Bands are the four performance levels published in the 2021 State of DevOps report."
     },
     {
       "title": "Mean time to restore",
@@ -147,7 +210,28 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "orange",
+                "value": 86400
+              },
+              {
+                "color": "red",
+                "value": 604800
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -157,7 +241,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_dora_metric{metric=\"mttr_seconds\"}",
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"mttr_seconds\"})",
           "legendFormat": "MTTR",
           "refId": "A"
         }
@@ -168,12 +252,14 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "graphMode": "none"
       },
-      "id": 4
+      "id": 4,
+      "description": "Incident to resolve. Elite is under an hour, high under a day, medium under a week. Bands are the four performance levels published in the 2021 State of DevOps report."
     },
     {
-      "title": "DORA metrics over time",
+      "title": "Lead time and time to restore",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -182,11 +268,13 @@
       "gridPos": {
         "x": 0,
         "y": 6,
-        "w": 24,
+        "w": 12,
         "h": 9
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "s"
+        },
         "overrides": []
       },
       "targets": [
@@ -195,12 +283,85 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_dora_metric",
-          "legendFormat": "{{metric}}",
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"lead_time_seconds\"})",
+          "legendFormat": "lead time",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"mttr_seconds\"})",
+          "legendFormat": "time to restore",
+          "refId": "B"
         }
       ],
-      "id": 5
+      "id": 5,
+      "description": "Both in seconds, so they share an axis honestly."
+    },
+    {
+      "title": "Deployment frequency and change failure rate",
+      "description": "Deploys per day on the left, the share that failed on the right.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "change failure rate"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "failure rate"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"deployment_frequency_per_day\"})",
+          "legendFormat": "deploys per day",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (metric) (healthbot_dora_metric{metric=\"change_failure_ratio\"})",
+          "legendFormat": "change failure rate",
+          "refId": "B"
+        }
+      ],
+      "id": 6
     }
   ]
 }
