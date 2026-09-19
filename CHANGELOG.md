@@ -295,6 +295,15 @@ first release's notes.
   a silent default.
 
 ### Fixed
+- **The local emulator is MiniStack, and three documents said otherwise.** They
+  gave a command creating a container named `ministack` that ran LocalStack
+  Community, so every reader who followed them believed they were on one
+  emulator and were on another. The free tier of that image does not implement
+  RDS, which this tree reads, so `CreateDBCluster` returns 501 and names a
+  licence plan, several steps from anything mentioning a database. Two people
+  working from the same tree reached opposite conclusions about whether it could
+  plan locally, and both were reporting honestly.
+
 
 - **`make tf-local` reseeds the emulator instead of trusting a stale state
   file.** The emulator is a container and loses its resources when it restarts,

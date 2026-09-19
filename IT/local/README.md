@@ -19,7 +19,7 @@ version: `latest` wants a paid auth token and quits on start without one, and an
 emulator much older than this one rejects the CloudWatch writes `seed` makes.
 
 ```bash
-docker run -d --name ministack -p 4566:4566 localstack/localstack:4.9
+docker run -d --name ministack -p 4566:4566 ministackorg/ministack:1.5.8
 ```
 
 ```bash

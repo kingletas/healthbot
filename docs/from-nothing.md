@@ -70,18 +70,20 @@ Two stacks, and they want these ports to themselves: 4566, 8080, 8081, 8065,
 3000, 9090 and 4318. If something else on your machine holds one, stop it first,
 or Docker refuses the whole stack with `port is already allocated`.
 
-The first stack is the AWS emulator. Anything that serves the LocalStack API on
-port 4566 will do:
+The first stack is the AWS emulator. It has to be MiniStack, and a substitute
+that merely answers the same API will not do:
 
 ```bash
-docker run -d --name ministack -p 4566:4566 localstack/localstack:4.9
+docker run -d --name ministack -p 4566:4566 ministackorg/ministack:1.5.8
 ```
 
-Pin a version rather than taking `latest`. The `latest` tag wants a paid auth
-token and quits on start without one, and all you see is the next command
-failing to connect, with nothing about a licence. An emulator much older than
-this one answers the health check and then rejects the CloudWatch writes
-`make seed` makes, which is a confusing place to find out.
+MiniStack speaks the LocalStack API on the same port and health path, so it is a
+drop-in for anything expecting one. What is not interchangeable is the coverage.
+This tree reads an RDS cluster, and the free tier of the emulator it replaced
+does not implement RDS at all: `CreateDBCluster` returns 501 and names a licence
+plan, several steps away from anything that mentions a database. Pin a version
+rather than taking `latest`, so an image change never arrives in the middle of a
+debugging session.
 
 The second is HealthBot's own: a stub storefront, a stub for New Relic and
 Google Analytics, Mattermost standing in for Slack, and the observability stack
