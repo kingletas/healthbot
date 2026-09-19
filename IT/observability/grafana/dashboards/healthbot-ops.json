@@ -1,0 +1,868 @@
+{
+    "uid": "healthbot-ops",
+    "title": "HealthBot Operations \u2014 the monitor itself",
+    "tags": [
+        "healthbot",
+        "ops"
+    ],
+    "schemaVersion": 39,
+    "version": 1,
+    "editable": true,
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+        "from": "now-3h",
+        "to": "now"
+    },
+    "panels": [
+        {
+            "id": 1,
+            "type": "stat",
+            "title": "HealthBot",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 4,
+                "h": 4
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_heartbeat_total), 1) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "SILENT",
+                                    "color": "red",
+                                    "index": 0
+                                },
+                                "1": {
+                                    "text": "RUNNING",
+                                    "color": "green",
+                                    "index": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "SILENT",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Whether any completed run is still reporting. The collector holds a run's metrics for 10 minutes, so at the 5-minute timer cadence this is RUNNING whenever the last two runs landed. Nothing reporting reads SILENT rather than blank.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 2,
+            "type": "stat",
+            "title": "Telemetry pipeline",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 4,
+                "y": 0,
+                "w": 4,
+                "h": 4
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "up{job=\"otel-collector\"}",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "COLLECTOR DOWN",
+                                    "color": "red",
+                                    "index": 0
+                                },
+                                "1": {
+                                    "text": "Collector up",
+                                    "color": "green",
+                                    "index": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NO PROMETHEUS DATA",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Prometheus scraping the collector. When this is down every other panel on this dashboard is stale, however healthy it looks.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 3,
+            "type": "stat",
+            "title": "Runs reporting",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 8,
+                "y": 0,
+                "w": 4,
+                "h": 4
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "count(healthbot_heartbeat_total) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "NONE",
+                                    "color": "red",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NONE",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "How many runs are inside the collector's 10-minute retention. The bot is a oneshot: every run is a separate process and gets its own series, so at a 5-minute cadence a healthy value is 2 or 3. Zero means the timer stopped.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 4,
+            "type": "stat",
+            "title": "Version reporting",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 12,
+                "y": 0,
+                "w": 6,
+                "h": 4
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "count by (service_version) (target_info) or label_replace(absent(target_info) * 0, \"service_version\", \"NOT REPORTING\", \"\", \"\")",
+                    "refId": "A",
+                    "legendFormat": "{{service_version}}",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "noValue": "NOT REPORTING",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "text",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                },
+                "overrides": []
+            },
+            "description": "The version the reporting runs identify themselves as. Two versions side by side means a rollout is in flight or a host was missed, which is the only reading this panel is for. The version HealthBot was *built* at is not emitted anywhere, so it cannot be compared against that here.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "name",
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 5,
+            "type": "stat",
+            "title": "Environment",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 18,
+                "y": 0,
+                "w": 6,
+                "h": 4
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "count by (deployment_environment) (target_info) or label_replace(absent(target_info) * 0, \"deployment_environment\", \"NOT REPORTING\", \"\", \"\")",
+                    "refId": "A",
+                    "legendFormat": "{{deployment_environment}}",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "noValue": "NOT REPORTING",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "text",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Which environment the reporting runs stamp on their telemetry. More than one value here means two deployments are feeding one collector.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "name",
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 6,
+            "type": "bargauge",
+            "title": "Is every check still reporting?",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 4,
+                "w": 12,
+                "h": 7
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"new_relic\"}), 1) or on() vector(0)",
+                    "refId": "A",
+                    "legendFormat": "New Relic",
+                    "instant": true,
+                    "range": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"aws_metrics\"}), 1) or on() vector(0)",
+                    "refId": "B",
+                    "legendFormat": "AWS metrics",
+                    "instant": true,
+                    "range": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"google_analytics\"}), 1) or on() vector(0)",
+                    "refId": "C",
+                    "legendFormat": "Google Analytics",
+                    "instant": true,
+                    "range": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"checkout\"}), 1) or on() vector(0)",
+                    "refId": "D",
+                    "legendFormat": "Checkout journey",
+                    "instant": true,
+                    "range": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"pings\"}), 1) or on() vector(0)",
+                    "refId": "E",
+                    "legendFormat": "Canary pings",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "NOT REPORTING",
+                                    "color": "red",
+                                    "index": 0
+                                },
+                                "1": {
+                                    "text": "Reporting",
+                                    "color": "green",
+                                    "index": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NOT REPORTING",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "min": 0,
+                    "max": 1,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "A check that stopped running looks exactly like a check that is passing, unless something names the checks that ought to be there. Nothing emits that list, so it is enumerated here: one row per check the run performs. The answer is yes or no and is drawn that way \u2014 a half-full bar would invite reading a magnitude into a question that has none.",
+            "options": {
+                "displayMode": "basic",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "text"
+            }
+        },
+        {
+            "id": 7,
+            "type": "bargauge",
+            "title": "Check outcomes, by state",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 12,
+                "y": 4,
+                "w": 12,
+                "h": 7
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (check, status) (healthbot_check_result_total)",
+                    "refId": "A",
+                    "legendFormat": "{{check}} \u00b7 {{status}}",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "noValue": "No check has reported an outcome",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "text",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "text"
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*\u00b7 pass"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "green"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*\u00b7 fail"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "orange"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*\u00b7 error"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "red"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "description": "Runs recorded per check and state. 'fail' is the store failing a check; 'error' is HealthBot throwing while running one, which is the bot's own fault. The check names are left as the code spells them, because this panel reads whatever labels arrive: a check added in code appears here without a dashboard change.",
+            "options": {
+                "displayMode": "basic",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "text"
+            }
+        },
+        {
+            "id": 8,
+            "type": "timeseries",
+            "title": "Checks that threw \u2014 HealthBot's own fault",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 11,
+                "w": 8,
+                "h": 7
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (check) (healthbot_check_result_total{status=\"error\"})",
+                    "refId": "A",
+                    "legendFormat": "{{check}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "custom": {
+                        "drawStyle": "line",
+                        "lineWidth": 2,
+                        "fillOpacity": 10,
+                        "showPoints": "auto",
+                        "spanNulls": false
+                    },
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "red"
+                    },
+                    "noValue": "Nothing reported in this window"
+                },
+                "overrides": []
+            },
+            "description": "An 'error' is an exception inside HealthBot, not a verdict about the store. Flat at zero is the healthy state; any step up is a bug here rather than an outage there."
+        },
+        {
+            "id": 9,
+            "type": "timeseries",
+            "title": "Run outcomes",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 8,
+                "y": 11,
+                "w": 8,
+                "h": 7
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (outcome) (healthbot_heartbeat_total)",
+                    "refId": "A",
+                    "legendFormat": "{{outcome}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "custom": {
+                        "drawStyle": "line",
+                        "lineWidth": 2,
+                        "fillOpacity": 10,
+                        "showPoints": "auto",
+                        "spanNulls": false
+                    },
+                    "noValue": "Nothing reported in this window"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "success"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "green"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "error"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "red"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "description": "One tick per completed run, split by whether the run finished or died. A line that stops climbing is the timer having stopped firing."
+        },
+        {
+            "id": 10,
+            "type": "gauge",
+            "title": "Mean run duration against the 300s systemd budget",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 16,
+                "y": 11,
+                "w": 8,
+                "h": 7
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(healthbot_run_duration_seconds_sum) / sum(healthbot_run_duration_seconds_count)",
+                    "refId": "A",
+                    "legendFormat": "mean run",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 300,
+                    "unit": "s",
+                    "decimals": 2,
+                    "noValue": "No run has reported",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 240
+                            },
+                            {
+                                "color": "red",
+                                "value": 300
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "The unit sets TimeoutStartSec=300, so a run past 300s is killed and recorded as a failure with the store blamed for it. The scale is that budget, so the headroom is visible without holding 300 in your head. The slowest single run cannot be shown: the histogram's first bucket boundary is 5s, so every run here is only known to be under 5 seconds.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            }
+        },
+        {
+            "id": 11,
+            "type": "text",
+            "title": "Wanted on this dashboard and not emitted",
+            "gridPos": {
+                "x": 0,
+                "y": 18,
+                "w": 24,
+                "h": 12
+            },
+            "options": {
+                "mode": "markdown",
+                "content": "A control that is simply missing cannot be told apart from a thing that was never built. These four are missing, and each names the change that would fill it.\n\n| Wanted | Why it is not here | The change that would emit it |\n| --- | --- | --- |\n| **Configuration age** | No instrument exists. `config_files.py` reads `site.yml` and `slo.yml` through a cache and never records when either was last written | A gauge set to the config file's mtime, one series per file |\n| **Secret age** | `SecretsManager` fetches the secret and discards the metadata. Nothing records a rotation date | A gauge set to the secret's `LastChangedDate`, which the AWS response already carries |\n| **Version built** | `target_info` carries the version the process is *running*. Nothing emits the version that was *built*, so the two cannot be compared | A build gauge from CI, or the deploy record carrying the sha into a metric rather than only into the DORA journal |\n| **Timer health** | No systemd metrics reach this stack. Cadence is inferred from heartbeats alone, which is why the panels above talk about runs reporting rather than timer state | A node exporter with the systemd collector, or the unit writing its own result into a textfile |\n\n**The check list above is the fifth.** Absence of a check can only be detected against an expected set, and nothing emits one. Recording every configured check with a zero at startup would make it data instead of a hardcoded list here."
+            },
+            "transparent": false
+        }
+    ]
+}
