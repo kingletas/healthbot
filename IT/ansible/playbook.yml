@@ -104,6 +104,15 @@
             mode: "0750"
             recurse: true
 
+      # This template replaces the whole file, including the two lines
+      # cloud-init wrote at first boot, so the prefix has to be declared here.
+      - name: Refuse to deploy without the Parameter Store prefix
+        ansible.builtin.assert:
+            that: "'HB_PARAM_PREFIX' in healthbot_env"
+            fail_msg: >-
+                healthbot_env carries no HB_PARAM_PREFIX, so every run would
+                read site.yml's prefix instead of the one Terraform created
+
       # Rendered from group_vars rather than copied from a committed file:
       # the env file is configuration, not a secret, and belongs in vars
       - name: Render the environment file
@@ -187,6 +196,10 @@
             cmd: >-
                 {{ healthbot_dora_command }} record deploy
                 {{ ('--sha ' + healthbot_head.stdout) if healthbot_head.rc == 0 else '' }}
+        # Stated by the deploy rather than inherited from whoever ran it, so
+        # two operators append to one journal instead of two.
+        environment:
+            HB_DORA_EVENTS: "{{ healthbot_dora_events }}"
         delegate_to: localhost
         become: false
         run_once: true

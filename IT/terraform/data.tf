@@ -134,10 +134,15 @@ data "aws_iam_policy_document" "allow-policy" {
 }
 
 data "cloudinit_config" "this" {
+  # base64_encode stays on: the AWS provider encodes user_data only when it is
+  # not already base64, so this is passed to the API unchanged.
   base64_encode = true
   gzip          = false
   part {
-    content = <<EOF
+    # Declared rather than left to the provider's text/plain default, which
+    # works only because cloud-init re-reads the type off the first line.
+    content_type = "text/cloud-config"
+    content      = <<EOF
 #cloud-config
 ---
 users:

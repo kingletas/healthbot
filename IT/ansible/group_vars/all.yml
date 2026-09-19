@@ -40,6 +40,11 @@ healthbot_venv: /opt/healthbot
 # journal that silently stops counting reports better than the truth.
 healthbot_record_deploy: true
 healthbot_dora_command: healthbot-dora
+# The journal is the only copy of the deploy history. Replacing the EC2
+# instance does not touch it, because it is never written there; what ends it
+# is losing this path. Point it somewhere your team backs up and shares, or
+# accept that the history is one operator's home directory.
+healthbot_dora_events: "{{ lookup('ansible.builtin.env', 'HOME') }}/.local/share/healthbot/dora-events.jsonl"
 
 system_dir: /lib/systemd/system/
 service_name: HealthBot

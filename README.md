@@ -57,7 +57,7 @@ the client that sends it. One module per check, named for what it reads.
 
 Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5%, both latencies 99%, monitor availability 99.9%). Every run emits per-SLI good/bad events plus a heartbeat through OpenTelemetry when `HB_OTEL_ENABLED=1` and an `OTEL_EXPORTER_OTLP_ENDPOINT` are set; without them the telemetry layer is a no-op and nothing changes. Prometheus computes multi-window burn rates from the emitted targets, paging at 14.4× and raising a ticket at 6×, plus `HealthBotSilent`, the dead-man's switch that fires when the heartbeat stops.
 
-DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR.
+DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR. The journal is written wherever the deploy runs from, not on the deployed host, and it is the only copy of that history: back up `HB_DORA_EVENTS` or point it at something that is already backed up.
 
 The full local stack (OTel Collector → Prometheus with its rules → Grafana with its provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
 
