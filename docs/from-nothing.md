@@ -55,19 +55,26 @@ git clone https://github.com/kingletas/healthbot && cd healthbot && make install
 `make install` builds the virtualenv from the lockfile and downloads the Chromium
 that drives the checkout journey. The browser download is the slow part.
 
-Check that worked:
+Check that worked. This reads no config, opens no connection and needs no
+credentials, so it answers before anything else exists:
 
 ```bash
-uv run healthbot --help
+uv run healthbot --version
 ```
+
+`uv run healthbot --help` lists every setting you can change.
 
 ## Step 2: bring up the world it watches
 
-Two stacks. The first is the AWS emulator, which is shared across projects rather
-than owned by this one:
+Two stacks, and they want these ports to themselves: 4566, 8080, 8081, 8065,
+3000, 9090 and 4318. If something else on your machine holds one, stop it first,
+or Docker refuses the whole stack with `port is already allocated`.
+
+The first stack is the AWS emulator. Anything that serves the LocalStack API on
+port 4566 will do:
 
 ```bash
-docker compose -f ~/Services/dev-services/docker-compose.yaml up -d ministack
+docker run -d --name ministack -p 4566:4566 localstack/localstack
 ```
 
 The second is HealthBot's own: a stub storefront, a stub for New Relic and
@@ -122,18 +129,23 @@ Run the bot again. It still exits 0, because the run itself worked, and that
 is the distinction that matters: a non-zero exit means HealthBot broke, not that your
 store did. What changes is that an alert is now waiting in Mattermost's
 `~town-square` at <http://localhost:8065> (`sre@local.test` /
-`SuperSecret-123`), reading *Checkout may be down*.
+`SuperSecret-123`). It opens with the line a locked phone would show, which
+names what is failing and the limit it went past.
 
-A failed checkout journey also leaves evidence under `healthbot/logs/`: a
-screenshot, the page HTML, and a Playwright trace you can replay:
+A failed checkout journey also leaves evidence in the log directory: a
+screenshot, the page HTML, and a Playwright trace you can replay. `make run-env`
+points `HB_LOG_DIR` at `local.d/evidence` for this walkthrough:
 
 ```bash
-ls -t healthbot/logs | head -3
+ls -t local.d/evidence | head -3
 ```
+
+Set `HB_LOG_DIR` yourself to put it somewhere else. Unset, it is
+`~/.local/state/healthbot/logs`, and the deployed host uses `/var/log/healthbot`.
 
 Turn it back on with `{"checkout_down": false}`, and confirm the next run is
 quiet again. Recovery has to be proved too. The other switches are
-`pings_down`, `ga_surge` and `nr_slow`; `IT/local/README.md` says what each one
+`canary_down`, `ga_surge` and `nr_slow`; `IT/local/README.md` says what each one
 breaks and which alert it should reach.
 
 When you're done:
@@ -151,15 +163,16 @@ to the packaged one, so an override is usually just the top few values:
 
 ```yaml
 base_url: https://your-store.example/
-product_url: some-product-page.html
 search_term: "something your search finds"
-ping_urls:
+canary_urls:
     - checkout
     - checkout/cart
 ```
 
-The thresholds below those, `alert_limit`, `app_response_alert` and
-`web_response_alert`, decide when a run is worth waking somebody for. Start with
+The thresholds below those decide when a run is worth waking somebody for.
+Each is an upper bound and they do not share a unit: `active_users_alert` is a
+count of realtime users, `app_response_alert` is milliseconds and
+`web_response_alert` is seconds. Start with
 the shipped numbers, watch for a couple of weeks, then move them once you know
 what normal looks like on your own store. A threshold that fires when nothing is
 wrong is worse than no threshold, because it teaches everybody to ignore the
@@ -176,7 +189,7 @@ a host with a systemd timer. Neither is required to run it locally.
 Things you'd otherwise build yourself:
 
 - **Evidence when it fails.** A screenshot, the page HTML and a replayable trace
-  under `healthbot/logs/`, so you can see what the browser saw instead of
+  in the log directory, so you can see what the browser saw instead of
   guessing.
 - **Honest exit codes.** A crashed run exits non-zero and charges only the
   monitor's own objective. A run that died says nothing about your store, so it

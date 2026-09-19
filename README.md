@@ -22,13 +22,13 @@ make up seed    # the local environment, and the data a run expects to find
 
 | Check | Source | Feeds |
 |---|---|---|
-| `checks/site.py` | Headless Chromium (Playwright): search → product → add to cart → checkout page. A failure leaves a screenshot, the page HTML and a replayable trace under `logs/` | `is_checkout_up` |
-| `checks/pings.py` | Async sweep of the base URL + `ping_urls` from `site.yml`; a connection failure folds in as status 0 instead of aborting the run | `ping_ok` |
+| `checks/site.py` | Headless Chromium (Playwright): search → product → add to cart → checkout page. A failure leaves a screenshot, the page HTML and a replayable trace in `HB_LOG_DIR` | `is_checkout_up` |
+| `checks/canary.py` | Async sweep of the base URL + `canary_urls` from `site.yml`; a connection failure folds in as status 0 instead of aborting the run | `canary_ok` |
 | `checks/nr.py` | New Relic APM + browser summaries | `app_*`/`web_*` metrics |
 | `checks/ga.py` | GA4 realtime active users, through the Data API's `runRealtimeReport`, service account via google-auth. A property that cannot be read is `None`, which alerts rather than passing | `ga_active_users` |
 | `checks/aws.py` | CloudWatch metrics for the tagged EC2 fleet + RDS cluster (newest datapoint, UTC window) | `aws_metrics` |
 
-Alert thresholds live in `healthbot/config/site.yml`, currently `alert_limit: 700` active users, `app_response_alert: 800` ms and `web_response_alert: 3.5` s. A signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
+Alert thresholds live in `healthbot/config/site.yml`, currently `active_users_alert: 700` realtime users, `app_response_alert: 800` ms and `web_response_alert: 3.5` s. Each is an upper bound, and they do not share a unit, so each one states its own. `HB_LOG_DIR` is where the run log and the failed-checkout evidence go; unset, it is `~/.local/state/healthbot/logs`. A signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
 
 A standing alert backs off rather than repeating: 15 minutes, then 30, then hourly, so an outage lasting an afternoon doesn't send fifty identical messages. A change in *what* is failing always speaks immediately, recovery needs two consecutive clean runs before it counts, and a gate that can't read its own state sends rather than suppressing.
 
@@ -43,7 +43,7 @@ healthbot/
   alerting.py        whether a bad run is worth telling anybody about again
   slo.py  telemetry.py  dora.py  demo.py  local_env.py
   aws/               client.py · parameter_store.py · secrets_manager.py
-  checks/            site.py · pings.py · nr.py · ga.py · aws.py
+  checks/            site.py · canary.py · nr.py · ga.py · aws.py
   notifications/     base.py · manager.py · slack.py · sns.py · twilio.py
   config/            the shipped YAML: site, slo, cookies, headers, messages
 IT/

@@ -9,6 +9,23 @@ first release's notes.
 
 ### Added
 
+- **The alert says why it fired.** A new section lists every failing signal with
+  its reading beside its limit, so nobody compares a table of numbers against a
+  threshold file by eye.
+- **`healthbot --help` and `healthbot --version`.** Both answer without reading
+  config, opening a connection or needing credentials. An argument the command
+  doesn't know is now refused rather than ignored.
+- **`HB_LOG_LEVEL`**, which defaults to `INFO`. A healthy run is now quiet on the
+  console, which is what the guides have always claimed. The log file still
+  keeps every `DEBUG` line, so nothing is lost for diagnosing a failed run. Set
+  `HB_LOG_LEVEL=DEBUG` for the old behaviour.
+- **A drift between an objective and the alert guarding it is reported.**
+  `slo.yml` restates `site.yml`'s latency numbers on purpose; when the two stop
+  agreeing, each run says so once. Silent while they agree.
+- **`HB_CONFIG_DIR` now reaches `slo.yml`.** It was the one config file the
+  override could not replace, so the documented way to change a threshold
+  guaranteed the drift above on the first edit anybody made.
+
 - **`make tf-local` plans the infrastructure against a local AWS emulator.** It
   needs no AWS account and no credentials: point a LocalStack-compatible
   emulator at `172.17.0.1:4566`, or set `HB_LOCAL_AWS_ENDPOINT` to wherever
@@ -42,6 +59,81 @@ first release's notes.
   credentials.
 
 ### Changed
+
+- **Two settings in `site.yml` have been renamed, and a run refuses to start
+  until you rename them too.** `ping_urls` is now `canary_urls`, and
+  `alert_limit` is now `active_users_alert`. Edit your own `site.yml`, or the
+  one under `HB_CONFIG_DIR`, and change those two key names; nothing else about
+  them changed. `alert_limit` said neither what it limited nor in which
+  direction, and the sweep it guards is called a canary everywhere else. A run
+  that meets the old name names the new one and stops rather than monitoring
+  nothing quietly.
+
+- **One name per thing, across the code, the config, the alerts, the dashboards
+  and the docs.** The canary sweep was `pings`, `ping_ok`, `ping_urls`, "All
+  configured URLs are running", "Some pings didn't complete",
+  `canary_availability` and "Canary probes"; it is **canary** now. The two
+  latency objectives were `storefront_latency` and `application_latency`, which
+  matched neither the settings that page on them nor each other, and
+  *storefront* was also the name of the local stub serving the whole site. They
+  are `web_latency` and `app_latency`, matching `web_response_time` and
+  `app_response_time`. **Two things outside the repository read these names:**
+  the telemetry counter `healthbot.probe.http.status` is now
+  `healthbot.canary.http.status` (`healthbot_canary_http_status_total` in
+  Prometheus), and the `slo` and `check` label values changed with the names
+  above. The shipped dashboards and rules are updated; a dashboard or alert of
+  your own that queries the old metric or label keeps reading the old series,
+  which stops receiving data. The local stack's chaos switch `pings_down` is now
+  `canary_down`.
+
+- **The push notification says what is failing.** It looked at the checkout
+  journey and the canary sweep only, so a run paging on response time, on a
+  traffic surge, or because a signal could not be collected at all arrived on a
+  locked phone reading **"all checks passed"**. It now names every failing
+  signal with its value and its limit, which is also what a screen reader gets.
+  The message header is shorter and carries no emoji shortcode, because that
+  text is cut off on a phone and `:robot_face:` renders literally there.
+
+- **An untagged EC2 instance is headed by its instance id.** The alert used to
+  carry a heading reading `*NAME TAG NOT ASSIGNED*`, which was a sentence being
+  shouted as a title. `metrics.yml`'s `label` is now what heads a shared
+  namespace such as RDS; nothing read it before.
+
+- **A missing setting says which one and what to do about it.** A parameter that
+  does not exist in Parameter Store failed with `IndexError: list index out of
+  range` and a traceback naming no parameter, because SSM returns a missing name
+  rather than raising. A missing secret was logged twice, once as a botocore
+  exception and again with a traceback. Both now print one line naming the thing
+  and the next action, and the run exits 1.
+
+- **A `base_url` written without a trailing slash works.** It used to be joined
+  to each path by plain concatenation, so the sweep asked for
+  `https://store.example.comcheckout`, got nothing, and paged.
+
+- **The log file is named for a date you can read.** `healthbot_2111326.log` was
+  22 November 2021: the format string used loguru's `DDDD`, which is the day of
+  the year. It is now `healthbot_2026-09-19.log`.
+
+- **Four settings that did nothing are gone from the deployed environment file.**
+  `HB_TAG_NAME`, `HB_DB_IDENTIFIER`, `HB_SECRETS_NAME` and `HB_AWS_PROFILE` were
+  written into `/etc/healthbot.env` and read by nothing, while the comment above
+  them said they selected the fleet. Which fleet, which database and which
+  secret a run uses come from Parameter Store, where Terraform writes them, and
+  that is now the only place they live. Anything that set those variables was
+  already having no effect. `HB_LOG_LEVEL` joins the file in their place.
+
+- **`product_url` and the four `test.*` keys are gone from `site.yml`.** Nothing
+  read any of them, and both guides told you to set `product_url`.
+
+- **`make demo` works with no arguments.** It needed `HB_OTEL_ENABLED` and
+  `OTEL_EXPORTER_OTLP_ENDPOINT` set by hand and refused without them, while
+  `make up` had just started the collector it wanted. The target now carries the
+  endpoint; `make demo OTEL_ENDPOINT=...` points it elsewhere.
+
+- **The onboarding guide's first command no longer starts a production run.** It
+  was `healthbot --help`, and nothing parsed arguments, so a brand new reader's
+  first command opened Redis, read config and called AWS, then printed a cache
+  warning and a traceback.
 
 - **Both CloudWatch alarms are named after the deployment, not the instance.**
   They were `awsec2-<instance-id>-status-check` and
