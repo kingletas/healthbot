@@ -1,7 +1,7 @@
 """
 How often a standing alert is allowed to speak.
 
-can_notify decides whether this run is bad. It says nothing about whether
+failing_signals decides what is bad this run. It says nothing about whether
 anybody needs telling again, so an outage that lasts an afternoon sent the
 same message every five minutes on Slack, SMS and SNS, around fifty of them,
 unread after the fifth. The burn-rate rules in IT/observability already
@@ -126,7 +126,7 @@ def failing_signals(message_data: dict, thresholds: dict) -> tuple:
     Which signals are bad this run, as a stable sorted tuple.
 
     A signal that could not be collected counts as failing under its own name,
-    the same rule can_notify applies, and it means a New Relic outage and a
+    which is the project's rule everywhere, and it means a New Relic outage and a
     genuinely slow site are different conditions, so one does not suppress the
     other's first alert.
     """

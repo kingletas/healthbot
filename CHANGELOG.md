@@ -86,6 +86,12 @@ first release's notes.
   which stops receiving data. The local stack's chaos switch `pings_down` is now
   `canary_down`.
 
+- **A failing canary sweep now pages.** It never did. The decision to alert was
+  a chain of branches beside the table that names every signal, and it had no
+  branch for the canary sweep, so every canary URL could answer 503 while the
+  `canary_availability` objective burned and no message went anywhere. The two
+  are one table now, so they cannot disagree again.
+
 - **The push notification says what is failing.** It looked at the checkout
   journey and the canary sweep only, so a run paging on response time, on a
   traffic surge, or because a signal could not be collected at all arrived on a

@@ -18,11 +18,7 @@ from healthbot.checks.site import validate_checkout
 from healthbot.config_files import check_site_config, get_base_url, get_config, get_header
 from healthbot.errors import ConfigurationError
 from healthbot.logs import logger
-from healthbot.notifications.manager import (
-    alert_thresholds,
-    can_notify,
-    send_notifications,
-)
+from healthbot.notifications.manager import alert_thresholds, send_notifications
 from healthbot.settings import get_settings
 
 
@@ -149,12 +145,11 @@ def main(argv: list | None = None) -> int:
                 telemetry.record_business_metrics(message_data)
                 telemetry.record_slo_events(slo.evaluate_run(message_data, run_completed=True))
 
-                # can_notify says this run is bad; the gate says whether
+                # The signals say this run is bad; the gate says whether
                 # anybody needs telling again. A standing outage used to send
                 # the same message every five minutes on all three channels.
-                bad_run = can_notify(message_data)
                 thresholds = alert_thresholds()
-                failing = failing_signals(message_data, thresholds) if bad_run else ()
+                failing = failing_signals(message_data, thresholds)
                 speak = AlertGate().should_notify(failing)
                 checkout_down = message_data.get("is_checkout_up") is False
 

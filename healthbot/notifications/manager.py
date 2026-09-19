@@ -42,41 +42,6 @@ def alert_thresholds() -> dict:
     return thresholds
 
 
-def can_notify(current: dict) -> bool:
-    """
-    Checks if an alert should be triggered by the system.
-
-    A signal that could not be collected (missing key or None) triggers the
-    alert too: "we cannot tell whether the site is healthy" must page, not
-    crash on float(None) or silently pass.
-    """
-    thresholds = alert_thresholds()
-
-    ga_active_users = current.get("ga_active_users")
-    app_response_time = current.get("app_response_time")
-    web_response_time = current.get("web_response_time")
-
-    missing = [
-        name
-        for name, value in (
-            ("ga_active_users", ga_active_users),
-            ("app_response_time", app_response_time),
-            ("web_response_time", web_response_time),
-        )
-        if value is None
-    ]
-    if missing:
-        logger.error(f"signals could not be collected, alerting: {', '.join(missing)}")
-        return True
-
-    return (
-        current.get("is_checkout_up") is False
-        or ga_active_users >= thresholds["active_users_alert"]
-        or float(app_response_time) >= thresholds["app_response_alert"]
-        or float(web_response_time) >= thresholds["web_response_alert"]
-    )
-
-
 def send_notifications(secrets: dict, notifications: dict) -> None:
     """Sends whichever notifications the run asked for and has credentials for."""
     # SMS

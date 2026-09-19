@@ -37,6 +37,7 @@ class FakeGate:
 
 
 def _wire(monkeypatch, message_data=HEALTHY, boom=False, bad_run=False, speak=True):
+    # bad_run is what the signals say; the gate then decides whether to speak.
     sent = {}
     monkeypatch.setattr(
         hb,
@@ -49,9 +50,10 @@ def _wire(monkeypatch, message_data=HEALTHY, boom=False, bad_run=False, speak=Tr
     )
     monkeypatch.setattr(hb, "ParameterStore", FakeParamStore)
     monkeypatch.setattr(hb, "SecretsManager", FakeSecrets)
-    monkeypatch.setattr(hb, "can_notify", lambda data: bad_run)
     monkeypatch.setattr(hb, "alert_thresholds", lambda: THRESHOLDS)
-    monkeypatch.setattr(hb, "failing_signals", lambda data, thresholds: ("is_checkout_up",))
+    monkeypatch.setattr(
+        hb, "failing_signals", lambda data, thresholds: ("is_checkout_up",) if bad_run else ()
+    )
     FakeGate.speak = speak
     monkeypatch.setattr(hb, "AlertGate", FakeGate)
 

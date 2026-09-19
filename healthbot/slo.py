@@ -64,7 +64,7 @@ def targets(slos: list | None = None) -> dict:
 def evaluate_run(message_data: dict, run_completed: bool, slos: list | None = None) -> list:
     """
     One (name, good) verdict per SLI for this run. A signal that could not be
-    collected is a bad event, the same rule can_notify applies: "we cannot
+    collected is a bad event, the rule the alert applies too: "we cannot
     tell" never counts as good.
     """
     verdicts = []
