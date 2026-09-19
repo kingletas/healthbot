@@ -16,6 +16,12 @@ first release's notes.
   every data source resolves. **It does not prove anything about real AWS** —
   the plan is against an emulator, and that difference is real.
 
+- **A plain statement that the machine image is not scanned.** `SECURITY.md`
+  and Step 5 of `docs/on-aws.md` now say that nothing in this repository runs a
+  vulnerability scanner over the AMI and that no software bill of materials is
+  produced, so you can decide for yourself whether to scan it before you boot
+  it. The build has not changed. What changed is that you no longer have to
+  assume something is already checking the image.
 - **A guide for deploying on AWS.** `docs/on-aws.md` takes you from an empty
   account to a systemd timer running the bot every five minutes: the tools, what
   has to exist in the account first, the credentials to collect, then Packer,

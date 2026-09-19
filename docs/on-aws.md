@@ -216,6 +216,13 @@ Terraform boots.
 The image carries the operating system and nothing else. HealthBot itself goes
 on in Step 8, which means a new version of the bot never needs a new image.
 
+> **Nothing here scans that image.** No step runs a vulnerability scanner over
+> the AMI and no software bill of materials is produced, so the image is only as
+> current as the packages on the day you built it and there is no inventory of
+> what is on it. Scan it with your own tool before you boot it if that matters
+> where you work, and rebuild when Ubuntu patches the base image.
+> [SECURITY.md](../SECURITY.md) says it in full.
+
 ```bash
 cd IT/packer && packer init .
 ```
