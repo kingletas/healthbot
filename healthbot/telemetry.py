@@ -27,6 +27,28 @@ _configured = False
 _tracer = trace.get_tracer(__app_name__, __version__)
 _meter = metrics.get_meter(__app_name__, __version__)
 
+# Boundaries that resolve the range a run measures and reach the ceilings
+# the code declares: 30s the ping timeout, 15s a Playwright step, 300s the
+# systemd TimeoutStartSec the whole run gets.
+CHECK_DURATION_BUCKETS = (
+    0.001,
+    0.0025,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1,
+    2,
+    5,
+    10,
+    15,
+    30,
+)
+RUN_DURATION_BUCKETS = (0.5, 1, 2, 3, 5, 10, 30, 60, 120, 180, 240, 300)
+
 run_duration = _meter.create_histogram(
     "healthbot.run.duration", unit="s", description="Wall time of one full run"
 )
@@ -60,6 +82,26 @@ response_time = _meter.create_gauge(
 dora_gauge = _meter.create_gauge(
     "healthbot.dora.metric", description="DORA metrics computed over the export window"
 )
+
+
+def duration_views() -> list:
+    """
+    Binds the boundaries above to the two duration histograms. Every other
+    instrument keeps the SDK default, which no view here matches.
+    """
+    # Imported here so the disabled path never touches the SDK
+    from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, View
+
+    return [
+        View(
+            instrument_name="healthbot.run.duration",
+            aggregation=ExplicitBucketHistogramAggregation(RUN_DURATION_BUCKETS),
+        ),
+        View(
+            instrument_name="healthbot.check.duration",
+            aggregation=ExplicitBucketHistogramAggregation(CHECK_DURATION_BUCKETS),
+        ),
+    ]
 
 
 def is_enabled() -> bool:
@@ -99,7 +141,9 @@ def setup_telemetry() -> bool:
     trace.set_tracer_provider(tracer_provider)
 
     reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-    metrics.set_meter_provider(MeterProvider(resource=resource, metric_readers=[reader]))
+    metrics.set_meter_provider(
+        MeterProvider(resource=resource, metric_readers=[reader], views=duration_views())
+    )
 
     _configured = True
     return True
@@ -181,9 +225,22 @@ def record_slo_events(events: list) -> None:
         slo_events.add(1, {"slo": name, "result": "good" if good else "bad"})
 
 
-def record_slo_targets(targets: dict) -> None:
-    for name, target in targets.items():
-        slo_target.set(float(target), {"slo": name})
+def record_slo_targets(objectives: list) -> None:
+    """
+    Emits each objective with the sentence slo.yml already carries and the
+    target as a printable percentage, so a dashboard names an SLI in words
+    and can show what it is measured against.
+    """
+    for objective in objectives:
+        target = float(objective["target"])
+        slo_target.set(
+            target,
+            {
+                "slo": objective["name"],
+                "description": objective["description"],
+                "objective": f"{target * 100:g}%",
+            },
+        )
 
 
 def record_dora(values: dict) -> None:

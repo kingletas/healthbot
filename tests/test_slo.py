@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from healthbot.slo import evaluate_run, load_slos, targets
+from healthbot.slo import evaluate_run, load_slos
 
 HEALTHY = {
     "is_checkout_up": True,
@@ -19,7 +19,8 @@ def test_the_five_slos_are_defined_with_targets():
         "app_latency",
         "monitor_availability",
     }
-    assert all(0 < t <= 1 for t in targets().values())
+    assert all(0 < slo["target"] <= 1 for slo in load_slos())
+    assert all(slo["description"] for slo in load_slos())
 
 
 def test_a_healthy_run_is_good_everywhere():

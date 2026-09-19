@@ -276,6 +276,52 @@ first release's notes.
   the committed lock file from a path that does not exist, so `init` silently
   resolved its own versions and the plan ran against cloudinit 2.4.1 and random
   3.9.1 where the lock pins 2.4.0 and 3.9.0.
+- **The dead-man's switch can fire.** `HealthBotSilent` asked whether the
+  heartbeat's rate was zero. In production the bot is a systemd oneshot, so
+  every run is a separate process with its own series carrying a single
+  sample, and a rate over any of them is zero however healthy the bot is: the
+  alert was true all the time and told you nothing. It now asks whether the
+  heartbeat is there at all, which is what a stopped bot actually looks like.
+  It pages about twenty minutes after the last run, which is the collector's
+  `metric_expiration` plus the alert's `for`, and stays quiet through a
+  collector restart. **If you have this alert routed anywhere, it was firing
+  or suppressed for reasons that had nothing to do with HealthBot**, and it
+  will now behave.
+- **Check and run durations land in buckets that can tell them apart.** Both
+  histograms used the OpenTelemetry defaults, which start at five seconds,
+  and every check here finishes far inside that first bucket, so
+  `histogram_quantile` returned the same interpolated 4.75 seconds for every
+  check on every dashboard. They now carry explicit boundaries that resolve
+  the range a run occupies and reach the ceilings the code declares: the 30
+  second ping timeout, the 15 second browser step, and the 300 seconds
+  systemd gives the whole run. **Existing history is not converted**: the old
+  buckets stay in Prometheus, so a quantile spanning the change reads across
+  two different sets of boundaries until the old data ages out.
+- **The check duration panel shows a quantile again.** It was taking a rate
+  over per-run series, which is zero on a oneshot, so it drew nothing at all.
+  It now takes the quantile over the runs inside a fifteen minute window.
+- **Panels draw the number that pages you.** Active users, both response
+  times and the runs-reporting panel now carry their alert threshold as a
+  line, and hold it in view even when the value is nowhere near it. Response
+  times carry a unit instead of a note in the title, so the app and web
+  panels can be compared.
+- **The SLO headline reads in words.** Each tile names the objective from
+  `config/slo.yml` and the target it is measured against, rather than
+  printing a metric key and leaving the colour to carry the verdict. It shows
+  how far the objective is above or below its own target, so the sign is the
+  verdict and one threshold is right for all five; the panel used to colour
+  every objective against a hardcoded 99%, which was wrong for two of them.
+  The `healthbot_slo_target` gauge now carries `description` and `objective`
+  labels to make that possible.
+- **The DORA panels can show what they plot.** Four metrics spanning six
+  orders of magnitude shared one linear axis, so three of them were a flat
+  line on the floor. They are now two panels, one per unit, and the four
+  headline stats carry the published performance bands so a number arrives
+  with a scale attached.
+- **A gauge panel draws one line, not one per run.** Each oneshot run emits
+  its own series, so the active-users and response-time panels drew a fresh
+  differently-coloured line for every run inside the collector's retention.
+  They now show the worst run in view, which is the question the alert asks.
 
 - **The instance can read its own fleet and publish its own alerts.** The role
   Terraform attaches granted Secrets Manager, KMS, CloudWatch and SSM, but not

@@ -14,7 +14,8 @@ exporters:
     prometheus:
         endpoint: 0.0.0.0:8889
         # DORA gauges arrive every ~10th run; don't let them go stale between
-        # exports
+        # exports. This also sets how long HealthBotSilent waits before a
+        # stopped bot looks absent.
         metric_expiration: 10m
     debug:
         verbosity: normal

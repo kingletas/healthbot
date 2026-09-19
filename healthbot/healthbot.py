@@ -122,7 +122,7 @@ def main(argv: list | None = None) -> int:
     try:
         try:
             with telemetry.run_span():
-                telemetry.record_slo_targets(slo.targets())
+                telemetry.record_slo_targets(slo.load_slos())
 
                 site_config = get_config("site.yml")
                 check_site_config(site_config)

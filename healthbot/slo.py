@@ -57,10 +57,6 @@ def report_threshold_drift(thresholds: dict, slos: list | None = None) -> list:
     return drifts
 
 
-def targets(slos: list | None = None) -> dict:
-    return {slo["name"]: slo["target"] for slo in (slos or load_slos())}
-
-
 def evaluate_run(message_data: dict, run_completed: bool, slos: list | None = None) -> list:
     """
     One (name, good) verdict per SLI for this run. A signal that could not be

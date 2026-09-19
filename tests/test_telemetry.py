@@ -75,12 +75,34 @@ def test_check_span_statuses():
     assert statuses == {"pass", "fail", "error"}
 
 
+def test_duration_histograms_resolve_the_range_a_run_measures():
+    reader = InMemoryMetricReader()
+    provider = MeterProvider(metric_readers=[reader], views=telemetry.duration_views())
+    meter = provider.get_meter("test")
+    fast = meter.create_histogram("healthbot.check.duration", unit="s")
+    fast.record(0.009)
+    fast.record(1.4)
+
+    point = (
+        reader.get_metrics_data()
+        .resource_metrics[0]
+        .scope_metrics[0]
+        .metrics[0]
+        .data.data_points[0]
+    )
+    assert tuple(point.explicit_bounds) == telemetry.CHECK_DURATION_BUCKETS
+    counted = {b: c for b, c in zip(point.explicit_bounds, point.bucket_counts, strict=False) if c}
+    assert counted == {0.01: 1, 2: 1}
+
+
 def test_business_and_slo_recorders():
     telemetry.record_business_metrics(
         {"ga_active_users": 321, "app_response_time": 450.0, "web_response_time": 2.1}
     )
     telemetry.record_slo_events([("checkout_availability", True), ("canary_availability", False)])
-    telemetry.record_slo_targets({"checkout_availability": 0.99})
+    telemetry.record_slo_targets(
+        [{"name": "checkout_availability", "target": 0.99, "description": "Checkout probe"}]
+    )
     telemetry.record_canary_statuses([("https://x/", 200), ("https://x/y", 503)])
     telemetry.record_dora({"mttr_seconds": 120.0})
 

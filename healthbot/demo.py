@@ -64,7 +64,7 @@ def emit_run(rng: random.Random, failure_rate: float) -> dict:
     message_data = synth_message_data(rng, failure_rate)
 
     with telemetry.run_span():
-        telemetry.record_slo_targets(slo.targets())
+        telemetry.record_slo_targets(slo.load_slos())
 
         for name in ("new_relic", "aws_metrics", "google_analytics"):
             with telemetry.check_span(name):
