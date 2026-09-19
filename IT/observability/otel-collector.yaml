@@ -9,6 +9,13 @@ receivers:
 
 processors:
     batch: {}
+    # The bot exports deltas, one run at a time; this adds them up so
+    # Prometheus sees one counter that climbs instead of a new series per run.
+    deltatocumulative:
+        # Longer than the timer's 5m period plus its 60s RandomizedDelaySec,
+        # so an ordinary gap between runs never drops the running total and
+        # restarts it at zero.
+        max_stale: 1h
 
 exporters:
     prometheus:
@@ -24,7 +31,7 @@ service:
     pipelines:
         metrics:
             receivers: [otlp]
-            processors: [batch]
+            processors: [deltatocumulative, batch]
             exporters: [prometheus]
         # Traces land in the collector log for now; a Tempo/Jaeger backend is
         # a one-exporter change here when trace browsing earns its keep

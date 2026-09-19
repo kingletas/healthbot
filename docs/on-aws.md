@@ -488,8 +488,11 @@ No deploy needed.
 
 **Turning telemetry on.** Set `HB_OTEL_ENABLED` to `1` and
 `OTEL_EXPORTER_OTLP_ENDPOINT` to your collector in `healthbot_env`, then deploy.
-Without both, the telemetry layer is a no-op. `IT/observability/README.md`
-covers the stack that receives it.
+Without both, the telemetry layer is a no-op. The collector on the other end
+needs a `deltatocumulative` processor in its metrics pipeline, because the bot
+runs as a oneshot and exports each run as a delta; without it every run lands as
+its own single-sample series and no burn-rate alert can fire.
+`IT/observability/README.md` covers the stack that receives it.
 
 **Reading the logs.** `journalctl -u healthbot.service` for the run,
 `/var/log/healthbot` for the evidence a failed checkout leaves.

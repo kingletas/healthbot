@@ -95,5 +95,7 @@ healthbot_env:
     HB_LOG_DIR: "/var/log/healthbot"
     PLAYWRIGHT_BROWSERS_PATH: "/opt/ms-playwright"
     # Telemetry stays off until a collector endpoint exists for this host;
-    # set HB_OTEL_ENABLED: "1" and OTEL_EXPORTER_OTLP_ENDPOINT to enable
+    # set HB_OTEL_ENABLED: "1" and OTEL_EXPORTER_OTLP_ENDPOINT to enable.
+    # That collector needs a deltatocumulative processor, or the runs of this
+    # oneshot never add up and no burn-rate alert can fire.
     HB_OTEL_ENABLED: "0"

@@ -55,7 +55,7 @@ the client that sends it. One module per check, named for what it reads.
 
 ## SLOs, telemetry, DORA
 
-Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5%, both latencies 99%, monitor availability 99.9%). Every run emits per-SLI good/bad events plus a heartbeat through OpenTelemetry when `HB_OTEL_ENABLED=1` and an `OTEL_EXPORTER_OTLP_ENDPOINT` are set; without them the telemetry layer is a no-op and nothing changes. Prometheus computes multi-window burn rates from the emitted targets, paging at 14.4× and raising a ticket at 6×, plus `HealthBotSilent`, the dead-man's switch that fires when the heartbeat stops.
+Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5%, both latencies 99%, monitor availability 99.9%). Every run emits per-SLI good/bad events plus a heartbeat through OpenTelemetry when `HB_OTEL_ENABLED=1` and an `OTEL_EXPORTER_OTLP_ENDPOINT` are set; without them the telemetry layer is a no-op and nothing changes. Counters go out as deltas under a stable instance id, so the runs of a five-minute oneshot accumulate into one series the collector can hand to Prometheus, which computes multi-window burn rates from the emitted targets, paging at 14.4× and raising a ticket at 6×, plus `HealthBotSilent`, the dead-man's switch that fires when the heartbeat stops.
 
 DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR.
 
@@ -75,7 +75,7 @@ Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos swi
 
 ## Runtime configuration
 
-All `HB_*` environment variables are validated by `healthbot/settings.py` (pydantic-settings): `HB_PARAM_PREFIX` (falls back to `site.yml`'s `secrets_namespace_prefix`), `HB_ENVIRONMENT`, `HB_OTEL_ENABLED`, `HB_DORA_EVENTS` and `HB_DORA_REPO`, plus the local-stack seams `HB_CONFIG_DIR`, `HB_NR_API_URL`, `HB_SLACK_API_URL` and `HB_GA_DISCOVERY_URL`, each a no-op when unset. On a deployed host they arrive via `/etc/healthbot.env`, templated by Ansible from `group_vars`. Run parameters come from SSM Parameter Store (plain values cached in Redis, sensitive ones never), and credentials from Secrets Manager, fetched fresh every run and never cached.
+All `HB_*` environment variables are validated by `healthbot/settings.py` (pydantic-settings): `HB_PARAM_PREFIX` (falls back to `site.yml`'s `secrets_namespace_prefix`), `HB_ENVIRONMENT`, `HB_OTEL_ENABLED`, `HB_OTEL_INSTANCE_ID`, `HB_DORA_EVENTS` and `HB_DORA_REPO`, plus the local-stack seams `HB_CONFIG_DIR`, `HB_NR_API_URL`, `HB_SLACK_API_URL` and `HB_GA_DISCOVERY_URL`, each a no-op when unset. On a deployed host they arrive via `/etc/healthbot.env`, templated by Ansible from `group_vars`. Run parameters come from SSM Parameter Store (plain values cached in Redis, sensitive ones never), and credentials from Secrets Manager, fetched fresh every run and never cached.
 
 The Secrets Manager blob carries `ga_property_id`: a GA4 property, numeric or `properties/<id>`. It replaced the Universal Analytics view id, which hasn't worked since Google withdrew that API in July 2024.
 

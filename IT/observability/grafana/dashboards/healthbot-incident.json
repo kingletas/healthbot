@@ -444,7 +444,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (check, status) (healthbot_check_result_total{status!=\"pass\"})",
+                    "expr": "round(sum by (check, status) (increase(healthbot_check_result_total{status!=\"pass\"}[$__range])))",
                     "refId": "A",
                     "instant": true,
                     "range": false,
@@ -537,7 +537,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (check, status) (healthbot_check_result_total{status!=\"pass\"})",
+                    "expr": "round(sum by (check, status) (increase(healthbot_check_result_total{status!=\"pass\"}[15m])))",
                     "refId": "A",
                     "legendFormat": "{{check}} \u00b7 {{status}}"
                 }
@@ -580,7 +580,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (url, status_code) (healthbot_canary_http_status_total{status_code!=\"200\"})",
+                    "expr": "round(sum by (url, status_code) (increase(healthbot_canary_http_status_total{status_code!=\"200\"}[$__range])))",
                     "refId": "A",
                     "instant": true,
                     "range": false,

@@ -94,6 +94,7 @@ Settings, all optional:
   HB_LOG_LEVEL      DEBUG, INFO (the default), WARNING or ERROR
   HB_LOG_DIR        where the log and the failed-checkout evidence go
   HB_OTEL_ENABLED   1 to emit telemetry, with OTEL_EXPORTER_OTLP_ENDPOINT set
+  HB_OTEL_INSTANCE_ID  who this monitor reports as, the hostname by default
 """
 
 
