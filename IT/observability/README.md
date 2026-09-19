@@ -52,7 +52,7 @@ healthbot-dora record resolve
 
 Objectives live in `healthbot/config/slo.yml` and are emitted as the `healthbot_slo_target` gauge, so the Prometheus rules never hardcode a target. Burn-rate alerting is multi-window multi-burn-rate (SRE Workbook §5.5): **page** at 14.4× (1h + 5m), **ticket** at 6× (6h + 30m), plus `HealthBotSilent`, the dead-man's switch, when the heartbeat stops.
 
-> The burn thresholds are conventions until enough real data exists to backtest them; see the volume-backtest lesson in the vault before paging anyone.
+> The burn thresholds are conventions, not measurements. Nothing here has been backtested against real traffic, so a threshold that looks right may fire constantly or never at all, and neither is visible until it happens. Collect real data first, replay it against these numbers, and move them before routing any of this to a person.
 
 ## Gotchas
 
