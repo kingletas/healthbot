@@ -76,6 +76,20 @@ first release's notes.
 
 ### Changed
 
+- **A plan refuses a first-boot payload the instance could not read.** The EC2
+  instance now asserts that its `user_data` decodes, in one step, to a
+  cloud-config that writes `/etc/healthbot.env`. Nothing was wrong with the
+  payload; what was missing was anything that would say so if a future edit
+  broke it, because a machine that boots without its environment file looks
+  healthy from Terraform and from AWS alike. The assertion reads an
+  uncompressed payload, so turning `gzip` on in `data.cloudinit_config.this`
+  means changing it too.
+
+- **The first-boot config declares its own content type.** The cloud-init part
+  went out as `text/plain` and was handled correctly only because cloud-init
+  re-reads the type off the first line of the body. It now says
+  `text/cloud-config`, so the right handler is chosen rather than guessed.
+
 - **`make check` refuses a tracked Terraform state file, and the repository says
   why that matters.** State records every value Terraform manages in plaintext,
   and this configuration builds a Secrets Manager secret out of your vendor

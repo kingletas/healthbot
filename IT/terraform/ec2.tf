@@ -63,6 +63,13 @@ resource "aws_instance" "this" {
 
   lifecycle {
     create_before_destroy = true
+
+    # A payload cloud-init cannot read boots a machine with no environment
+    # file, and nothing on the instance reports that.
+    precondition {
+      condition     = strcontains(local.boot_payload, "#cloud-config") && strcontains(local.boot_payload, local.etc_env_file)
+      error_message = "The user_data payload does not decode to a cloud-config that writes ${local.etc_env_file}, so a fresh instance would come up without its environment file. Check data.cloudinit_config.this: this assertion reads an uncompressed payload, so gzip has to stay off for it to hold."
+    }
   }
 
   tags = merge(local.tags,

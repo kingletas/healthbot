@@ -15,4 +15,8 @@ locals {
 
   etc_env_file = lower(format("/etc/%s.env", var.name))
 
+  # The provider base64-encodes user_data only when it is not already base64,
+  # so the instance receives the rendered config decoded exactly once.
+  boot_payload = try(base64decode(data.cloudinit_config.this.rendered), data.cloudinit_config.this.rendered)
+
 }
