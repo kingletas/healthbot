@@ -130,6 +130,18 @@ first release's notes.
 
 ### Fixed
 
+- **`make tf-local` reseeds the emulator instead of trusting a stale state
+  file.** The emulator is a container and loses its resources when it restarts,
+  while the harness kept a state file claiming they were still there. The next
+  plan then failed on five data sources, and nothing in the message pointed at
+  the seeding. `ACTION=clean` now destroys what it created before deleting the
+  state, so a later run cannot collide with resources left behind.
+
+- **`make tf-local` plans against the providers the deployment uses.** It copied
+  the committed lock file from a path that does not exist, so `init` silently
+  resolved its own versions and the plan ran against cloudinit 2.4.1 and random
+  3.9.1 where the lock pins 2.4.0 and 3.9.0.
+
 - **The instance can read its own fleet and publish its own alerts.** The role
   Terraform attaches granted Secrets Manager, KMS, CloudWatch and SSM, but not
   `ec2:DescribeInstances` or `sns:Publish`, both of which every run makes. The

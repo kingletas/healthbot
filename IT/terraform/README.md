@@ -24,9 +24,23 @@ make tf-local
 
 If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On anything other than Linux you will need to, because `172.17.0.1` is the Docker bridge address and only exists there.
 
-**What it proves:** the configuration parses, every variable resolves, and all six data sources it reads are found. It generates its own root module outside this repository and never loads your `terraform.tfvars`, so no real credential can reach the emulator.
+Each run reseeds what the data sources read, plans, and leaves the emulator holding the result. `make tf-local ACTION=apply` applies it and `make tf-local ACTION=clean` destroys it and removes the generated root.
+
+**What it proves:** the configuration parses, every variable resolves, all six data sources it reads are found, and a plan reaches a full diff of seventeen resources. It generates its own root module outside this repository and never loads your `terraform.tfvars`, so no real credential can reach the emulator. It plans with `terraform.tfvars.example`, which is what keeps that file able to plan.
 
 **What it does not prove:** anything about real AWS. An emulator answers the same API shapes, not the same service. Treat a clean local plan as a reason to try a real one, never as a substitute for it.
+
+### What the emulator will not apply
+
+An apply creates fourteen of the seventeen, and a plan afterwards reports a residue that does not shrink. All of it is emulator fidelity rather than anything wrong with the configuration, so a migration is proved by the residue staying exactly the same, not by reaching `No changes`.
+
+| Left over | Why |
+| --- | --- |
+| `aws_instance.this` | The emulator refuses `RunInstances` against an AMI it registered itself, though it reports that AMI as `available` and launches its own built-in images. `CopyImage` is unimplemented, so a self-owned copy of a built-in image is not available either. |
+| both `aws_cloudwatch_metric_alarm` resources | Their dimensions read `aws_instance.this.id`, so they wait on the instance above. |
+| `aws_key_pair.this` updated in place | The emulator does not persist tags on a key pair, so the same three tags are planned on every run. |
+
+Nothing is worked around in the deployable configuration for any of these, and none of them is a statement about real EC2.
 
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
