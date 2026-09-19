@@ -330,6 +330,9 @@ def run_env() -> int:
         "AWS_SECRET_ACCESS_KEY=test",
         f"AWS_DEFAULT_REGION={REGION}",
         "HB_CONFIG_DIR=IT/local/config",
+        # The log and any failed-checkout evidence land in the repository's own
+        # disposable directory, so the guide can name one exact path.
+        "HB_LOG_DIR=local.d/evidence",
         f"HB_NR_API_URL={API_BASE}/nr/v2/",
         f"HB_SLACK_API_URL={API_BASE}/slack/",
         f"HB_GA_DISCOVERY_URL={API_BASE}/ga/discovery",

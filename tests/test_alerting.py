@@ -14,11 +14,11 @@ import pytest
 # Local imports
 from healthbot.alerting import BACKOFF_MINUTES, RECOVERY_RUNS, AlertGate, failing_signals
 
-THRESHOLDS = {"alert_limit": 700, "web_response_alert": 3.5, "app_response_alert": 800}
+THRESHOLDS = {"active_users_alert": 700, "web_response_alert": 3.5, "app_response_alert": 800}
 
 HEALTHY = {
     "is_checkout_up": True,
-    "ping_ok": True,
+    "canary_ok": True,
     "ga_active_users": 100,
     "app_response_time": 400.0,
     "web_response_time": 2.0,
@@ -60,7 +60,7 @@ def test_a_healthy_run_has_no_failing_signals():
     ("override", "expected"),
     [
         ({"is_checkout_up": False}, ("is_checkout_up",)),
-        ({"ping_ok": False}, ("ping_ok",)),
+        ({"canary_ok": False}, ("canary_ok",)),
         ({"ga_active_users": 900}, ("ga_active_users",)),
         ({"app_response_time": 900.0}, ("app_response_time",)),
         ({"web_response_time": 4.0}, ("web_response_time",)),
@@ -81,9 +81,9 @@ def test_an_uncollected_signal_is_a_different_condition_from_a_bad_one():
 
 
 def test_the_signal_order_is_stable():
-    both = failing_signals({**HEALTHY, "is_checkout_up": False, "ping_ok": False}, THRESHOLDS)
+    both = failing_signals({**HEALTHY, "is_checkout_up": False, "canary_ok": False}, THRESHOLDS)
 
-    assert both == ("is_checkout_up", "ping_ok")
+    assert both == ("canary_ok", "is_checkout_up")
 
 
 # --------------------------------------------------------------------------
@@ -166,13 +166,13 @@ def test_a_bad_run_resets_the_recovery_count():
     # Bad, clean, bad, clean is one clean run in a row and not two, so the
     # condition is still armed rather than cleared.
     cache = FakeCache()
-    gate(cache, minutes=0).should_notify(("ping_ok",))
+    gate(cache, minutes=0).should_notify(("canary_ok",))
     gate(cache, minutes=5).should_notify(())
-    gate(cache, minutes=10).should_notify(("ping_ok",))
+    gate(cache, minutes=10).should_notify(("canary_ok",))
     gate(cache, minutes=15).should_notify(())
 
     state = gate(cache, minutes=15).read_state()
-    assert state["condition"] == "ping_ok"
+    assert state["condition"] == "canary_ok"
     assert state["clean_runs"] == 1
 
 

@@ -2,7 +2,7 @@
 
 import healthbot.notifications.manager as nm
 
-THRESHOLDS = {"alert_limit": 700, "web_response_alert": 3.5, "app_response_alert": 800}
+THRESHOLDS = {"active_users_alert": 700, "web_response_alert": 3.5, "app_response_alert": 800}
 
 HEALTHY = {
     "is_checkout_up": True,

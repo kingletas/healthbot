@@ -18,7 +18,9 @@ def test_instance_name_comes_from_the_name_tag():
     check = object.__new__(EC2Check)
     tags = [{"Key": "Environment", "Value": "x"}, {"Key": "Name", "Value": "web-1"}]
     assert check.get_instance_name_from_tag(tags) == "web-1"
-    assert check.get_instance_name_from_tag([]) == "Name tag not assigned"
+    # An untagged instance has no name; the caller falls back to its id
+    # rather than putting the sentence "Name tag not assigned" in the alert.
+    assert check.get_instance_name_from_tag([]) is None
 
 
 def test_metrics_config_loads_and_is_cached(tmp_path):

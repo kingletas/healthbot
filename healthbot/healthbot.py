@@ -1,20 +1,22 @@
 # Standard library imports
+import argparse
 import base64
 import json
 import sys
 
-from healthbot import slo, telemetry
-from healthbot.alerting import AlertGate, failing_signals
+from healthbot import __version__, slo, telemetry
+from healthbot.alerting import AlertGate, describe_failing, failing_signals
 from healthbot.aws.parameter_store import ParameterStore
 from healthbot.aws.secrets_manager import SecretsManager
 from healthbot.checks.aws import get_metric_data
+from healthbot.checks.canary import check_canary_urls
 from healthbot.checks.ga import GaCheck
 
 # Local imports
 from healthbot.checks.nr import get_new_relic_data
-from healthbot.checks.pings import ping_site
 from healthbot.checks.site import validate_checkout
-from healthbot.config_files import get_base_url, get_config, get_header
+from healthbot.config_files import check_site_config, get_base_url, get_config, get_header
+from healthbot.errors import ConfigurationError
 from healthbot.logs import logger
 from healthbot.notifications.manager import (
     alert_thresholds,
@@ -62,9 +64,9 @@ def get_message_data(secrets: dict, hb_prefix: str, param_store, site_config: di
         if is_checkout_up is not True:
             check.set_status("fail")
 
-    with telemetry.check_span("pings") as check:
-        ping_ok = ping_site()
-        if not ping_ok:
+    with telemetry.check_span("canary") as check:
+        canary_ok = check_canary_urls()
+        if not canary_ok:
             check.set_status("fail")
 
     return {
@@ -74,12 +76,48 @@ def get_message_data(secrets: dict, hb_prefix: str, param_store, site_config: di
         "is_checkout_up": is_checkout_up,
         "logo_url": site_config.get("logo_url"),
         "logo_alt": site_config.get("logo_alt"),
-        "ping_ok": ping_ok,
+        "canary_ok": canary_ok,
         **new_relic_data,
     }
 
 
-def main() -> int:
+HELP = """\
+Check whether a customer can buy something right now.
+
+One run walks the checkout in a real browser, sweeps the canary URLs, reads
+New Relic, Google Analytics and CloudWatch, and notifies if any of it is bad.
+It takes no arguments: what it checks comes from site.yml, and where it looks
+comes from AWS Parameter Store.
+
+A healthy run says nothing and exits 0. A non-zero exit means HealthBot itself
+broke, not that the store did.
+
+Settings, all optional:
+  HB_CONFIG_DIR     a directory of your own config files, packaged ones fill the gaps
+  HB_PARAM_PREFIX   the Parameter Store prefix to read, when it is not site.yml's
+  HB_LOG_LEVEL      DEBUG, INFO (the default), WARNING or ERROR
+  HB_LOG_DIR        where the log and the failed-checkout evidence go
+  HB_OTEL_ENABLED   1 to emit telemetry, with OTEL_EXPORTER_OTLP_ENDPOINT set
+"""
+
+
+def parse_args(argv: list | None = None) -> None:
+    """Answers --help and --version, and refuses anything else, before any check runs."""
+    parser = argparse.ArgumentParser(
+        prog="healthbot",
+        description=HELP,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--version", action="version", version=f"healthbot {__version__}")
+    parser.parse_args(argv)
+
+
+def main(argv: list | None = None) -> int:
+    # Arguments first, so --help and --version answer on a machine with no
+    # credentials, no Redis and no network. This was the onboarding guide's
+    # first command and it started a full production run.
+    parse_args(argv)
+
     # This is the outermost boundary and the only place an exception is
     # allowed to die. It must exit non-zero: @logger.catch plus a bare except
     # meant a total import-or-run failure exited 0, and systemd recorded a
@@ -91,6 +129,8 @@ def main() -> int:
                 telemetry.record_slo_targets(slo.targets())
 
                 site_config = get_config("site.yml")
+                check_site_config(site_config)
+                slo.report_threshold_drift(alert_thresholds())
                 param_store = ParameterStore()
                 hb_prefix: str = get_settings().param_prefix
 
@@ -113,13 +153,17 @@ def main() -> int:
                 # anybody needs telling again. A standing outage used to send
                 # the same message every five minutes on all three channels.
                 bad_run = can_notify(message_data)
-                failing = failing_signals(message_data, alert_thresholds()) if bad_run else ()
+                thresholds = alert_thresholds()
+                failing = failing_signals(message_data, thresholds) if bad_run else ()
                 speak = AlertGate().should_notify(failing)
                 checkout_down = message_data.get("is_checkout_up") is False
 
                 notification_data = {
                     "send_slack": speak,
                     "message_data": message_data,
+                    # Why this alert fired, in the reader's words. The run
+                    # already knows; it used to throw the answer away.
+                    "failing_lines": describe_failing(failing, message_data, thresholds),
                     "send_sms": speak and checkout_down,
                     "sms_message": site_config.get("sms_alert_message"),
                     "send_sns": speak and checkout_down,
@@ -129,6 +173,12 @@ def main() -> int:
                 }
 
                 send_notifications(secrets=secrets, notifications=notification_data)
+        except ConfigurationError as err:
+            # Something the operator can fix, so its own message is the whole
+            # report: one line, no traceback and no exception class name.
+            logger.error(str(err))
+            telemetry.record_slo_events([("monitor_availability", False)])
+            return 1
         except Exception as err:
             logger.exception(err)
             # A crashed run says nothing about the site, so only the monitor

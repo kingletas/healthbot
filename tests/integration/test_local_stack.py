@@ -70,10 +70,10 @@ def control(**switches) -> None:
 
 @pytest.fixture(autouse=True)
 def calm_state():
-    control(checkout_down=False, pings_down=False, ga_surge=False, nr_slow=False)
+    control(checkout_down=False, canary_down=False, ga_surge=False, nr_slow=False)
     clear_alert_state()
     yield
-    control(checkout_down=False, pings_down=False, ga_surge=False, nr_slow=False)
+    control(checkout_down=False, canary_down=False, ga_surge=False, nr_slow=False)
     clear_alert_state()
 
 
@@ -163,7 +163,7 @@ def test_full_run():
 
 def test_staged_outage_pages_into_mattermost():
     """
-    Flip the ga_surge switch (active users over site.yml's alert_limit) and
+    Flip the ga_surge switch (active users over site.yml's active_users_alert) and
     the run must alert with exit 0, because the *site* is degraded rather than
     the monitor, and
     with the Slack blocks relayed into Mattermost by the shim.

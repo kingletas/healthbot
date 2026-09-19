@@ -481,9 +481,9 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"pings\"}), 1) or on() vector(0)",
+                    "expr": "clamp_max(count(healthbot_check_result_total{check=\"canary\"}), 1) or on() vector(0)",
                     "refId": "E",
-                    "legendFormat": "Canary pings",
+                    "legendFormat": "Canary sweep",
                     "instant": true,
                     "range": false
                 }

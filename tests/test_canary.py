@@ -4,7 +4,7 @@ import asyncio
 
 from aiohttp import ClientError
 
-from healthbot.checks.pings import UNREACHABLE, all_ok, check_url
+from healthbot.checks.canary import UNREACHABLE, all_ok, check_url
 
 
 def test_all_ok_when_every_url_answers_200():

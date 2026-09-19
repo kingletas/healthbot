@@ -54,14 +54,14 @@ def context_block(message_data: dict) -> dict:
         status_line(
             message_data.get("is_checkout_up") is True,
             "Checkout is up and running.",
-            "Checkout may be down",
+            "Checkout may be down.",
         )
     )
     elements.append(
         status_line(
-            bool(message_data.get("ping_ok")),
-            "All configured URLs are running",
-            "Some pings didn't complete",
+            bool(message_data.get("canary_ok")),
+            "Every canary URL answered 200.",
+            "A canary URL didn't answer 200.",
         )
     )
 
@@ -81,51 +81,74 @@ def tier_summary(message_data: dict, tier: str, unit: str) -> str:
 def user_flow_block(message_data: dict) -> dict:
     return {
         "type": "section",
-        "text": mrkdwn("*User flow Stats*:"),
+        "text": mrkdwn("*What customers are seeing*"),
         "fields": [
-            mrkdwn("Google Analytics: "),
-            mrkdwn(f"{value_or_missing(message_data, 'ga_active_users')} active users"),
-            mrkdwn("New Relic APM: "),
+            mrkdwn("Active users (Google Analytics): "),
+            mrkdwn(value_or_missing(message_data, "ga_active_users")),
+            mrkdwn("App tier (New Relic APM): "),
             mrkdwn(tier_summary(message_data, "app", "ms")),
-            mrkdwn("New Relic Browser: "),
+            mrkdwn("Web tier (New Relic Browser): "),
             mrkdwn(tier_summary(message_data, "web", "s")),
         ],
     }
 
 
-def metric_blocks(aws_metrics: dict) -> list:
+def why_block(failing_lines: list) -> dict | None:
+    """
+    What is wrong, with each value beside its limit.
+
+    Without it the reader gets a table of numbers and has to hold the
+    thresholds in their head to work out which one tripped.
+    """
+    if not failing_lines:
+        return None
+    return {
+        "type": "section",
+        "text": mrkdwn(
+            "*Why this alert fired*\n" + "\n".join(f"• {line}" for line in failing_lines)
+        ),
+    }
+
+
+def metric_blocks(aws_metrics: dict, labels: dict | None = None) -> list:
+    """
+    One section per AWS source, headed by the name a person would recognise.
+
+    The heading is the instance's Name tag, or metrics.yml's label for the
+    namespace, or the instance id. An untagged instance used to put the
+    sentence "NAME TAG NOT ASSIGNED" in the message as if it were a heading.
+    """
+    labels = labels or {}
     blocks = []
     for class_key, metrics in (aws_metrics or {}).items():
         fields = []
         for metric, value in metrics.items():
             fields.append(mrkdwn(str(metric)))
             fields.append(mrkdwn(f"*{value}*"))
-        blocks.append(
-            {"type": "section", "text": mrkdwn(f"*{str(class_key).upper()}*:"), "fields": fields}
-        )
+        heading = labels.get(class_key) or str(class_key)
+        blocks.append({"type": "section", "text": mrkdwn(f"*{heading}*"), "fields": fields})
     return blocks
 
 
-def summary_text(message_data: dict) -> str:
+def summary_text(message_data: dict, failing_lines: list | None = None) -> str:
     """
     The one line that reaches a push notification and a screen reader.
 
     Slack renders blocks and nothing else, so an alert sent with blocks alone
     arrives on a locked phone as the bot's name and no content, which is the
-    moment an alert most needs to say something.
+    moment an alert most needs to say something. It says what is wrong, for
+    every signal that can page, because an alert that reports success is worse
+    than one that reports nothing.
     """
     header = str(message_data.get("header") or "HealthBot")
-    down = []
-    if message_data.get("is_checkout_up") is not True:
-        down.append("checkout")
-    if not message_data.get("ping_ok"):
-        down.append("canary URLs")
-    return f"{header}: {', '.join(down)} failing" if down else f"{header}: all checks passed"
+    if not failing_lines:
+        return f"{header}: nothing is failing"
+    return f"{header}: {'; '.join(failing_lines)}"
 
 
-def build_blocks(message_data: dict) -> list:
+def build_blocks(message_data: dict, failing_lines: list | None = None) -> list:
     """The whole alert, as Slack block-kit objects."""
-    return [
+    blocks = [
         {
             "type": "header",
             "text": {
@@ -135,18 +158,22 @@ def build_blocks(message_data: dict) -> list:
             },
         },
         context_block(message_data),
-        user_flow_block(message_data),
-        {"type": "section", "text": mrkdwn("*Nerd Stats*")},
-        *metric_blocks(message_data.get("aws_metrics")),
     ]
+    why = why_block(failing_lines or [])
+    if why:
+        blocks.append(why)
+    blocks.append(user_flow_block(message_data))
+    blocks.append({"type": "section", "text": mrkdwn("*Infrastructure*")})
+    blocks.extend(metric_blocks(message_data.get("aws_metrics"), message_data.get("metric_labels")))
+    return blocks
 
 
 class SlackMessage(Message):
-    def __init__(self, message_data: dict, channel: str) -> None:
+    def __init__(self, message_data: dict, channel: str, failing_lines: list | None = None) -> None:
         self.channel = channel
-        self.blocks = build_blocks(message_data)
+        self.blocks = build_blocks(message_data, failing_lines)
         self.message = json.dumps(self.blocks)
-        self.text = summary_text(message_data)
+        self.text = summary_text(message_data, failing_lines)
 
 
 class SlackNotifier(Notifier):

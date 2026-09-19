@@ -1,5 +1,9 @@
 ---
 # Only header.message is read. The per-source logos that used to sit here
 # were never looked up; the message logo is site.yml's logo_url.
+#
+# It is also the first thing on a push notification and in the SNS subject,
+# both of which cut off, so it is short and carries no emoji shortcode: those
+# render as the literal ":robot_face:" outside a Slack message body.
 
-header.message: "I am HealthBot :robot_face: with your SRE check."
+header.message: "HealthBot storefront check"

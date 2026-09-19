@@ -8,7 +8,7 @@ AWS is played by **MiniStack, which this compose file does not define**. It is t
 |---|---|---|
 | MiniStack (shared, from `dev-services`) | SSM Parameter Store, Secrets Manager, EC2, CloudWatch, SNS | `172.17.0.1:4566` |
 | Mattermost (preview image) | Slack, with messages landing in `~town-square` | `:8065` |
-| stub container | the storefront (Playwright checkout journey + pings) | `:8080` |
+| stub container | the storefront (Playwright checkout journey and the canary sweep) | `:8080` |
 | stub container | New Relic v2 API, GA discovery/token/realtime, the Slack→Mattermost shim, chaos switches | `:8081` |
 | included from `../observability` | otel-collector, Prometheus, Grafana, Redis | `:4318` `:9090` `:3000` `:6379` |
 
@@ -49,7 +49,7 @@ Each seam is one `HB_*` variable, validated in `healthbot/settings.py`, and each
 | Variable | Redirects | Mechanism |
 |---|---|---|
 | `AWS_ENDPOINT_URL` | every boto3 client | native botocore support; no code seam at all |
-| `HB_CONFIG_DIR` | `site.yml` (base URL, ping URLs) | override dir with per-file fallback to the packaged config |
+| `HB_CONFIG_DIR` | `site.yml` (base URL, canary URLs) | override dir with per-file fallback to the packaged config |
 | `HB_NR_API_URL` | New Relic | instance override of `newrelic_api`'s `Resource.URL` class attribute |
 | `HB_SLACK_API_URL` | Slack | `WebClient(base_url=…)`, and the shim relays `chat.postMessage` into Mattermost |
 | `HB_GA_DISCOVERY_URL` | Google Analytics (GA4 Data API `v1beta`) | `discoveryServiceUrl` + `static_discovery=False`; the token endpoint follows from `token_uri` inside the seeded service-account JSON |
@@ -67,8 +67,8 @@ curl -s -X POST http://localhost:8081/control -d '{"ga_surge": true}'
 | Switch | Effect | What alerts |
 |---|---|---|
 | `checkout_down` | checkout page loses its title | `is_checkout_up` → Slack/Mattermost + SNS |
-| `pings_down` | every non-checkout page 503s | `ping_ok` |
-| `ga_surge` | 934 active users (over `alert_limit` 700) | Slack/Mattermost |
+| `canary_down` | every non-checkout page 503s | `canary_ok` |
+| `ga_surge` | 934 active users (over `active_users_alert` 700) | Slack/Mattermost |
 | `nr_slow` | 2300 ms APM / 6.2 s browser | both latency thresholds |
 
 `GET /control` shows the current state; POST with `false` to calm it back down.

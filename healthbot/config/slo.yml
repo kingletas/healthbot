@@ -9,7 +9,7 @@
 # say this week. If they drift apart, that drift is a decision to surface.
 slos:
     - name: checkout_availability
-      description: Synthetic checkout probe succeeds
+      description: The browser checkout journey completes
       target: 0.99
       signal: is_checkout_up
       kind: boolean
@@ -17,18 +17,18 @@ slos:
     - name: canary_availability
       description: All canary URLs return 200
       target: 0.995
-      signal: ping_ok
+      signal: canary_ok
       kind: boolean
 
-    - name: storefront_latency
-      description: NR browser response under threshold
+    - name: web_latency
+      description: Web response time under its threshold (seconds)
       target: 0.99
       signal: web_response_time
       kind: below
       threshold: 3.5
 
-    - name: application_latency
-      description: NR APM response under threshold (ms)
+    - name: app_latency
+      description: App response time under its threshold (milliseconds)
       target: 0.99
       signal: app_response_time
       kind: below

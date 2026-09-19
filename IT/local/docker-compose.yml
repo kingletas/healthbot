@@ -16,7 +16,7 @@
 #                     172.17.0.1:4566, started once for the machine.
 #     Mattermost   -> Slack (the stub's /slack shim relays chat.postMessage)
 #     stubs :8081  -> New Relic and GA APIs, Slack shim, chaos /control
-#     stubs :8080  -> the storefront (Playwright checkout journey + pings)
+#     stubs :8080  -> the storefront (Playwright checkout journey and the canary sweep)
 #     feeder       -> publishes CloudWatch datapoints once a minute
 #     included     -> otel-collector, Prometheus, Grafana, Redis from
 #                     ../observability/docker-compose.yml
