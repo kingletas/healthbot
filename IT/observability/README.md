@@ -58,4 +58,5 @@ Objectives live in `healthbot/config/slo.yml` and are emitted as the `healthbot_
 
 - **Grafana is wide open** (`GF_AUTH_ANONYMOUS_ORG_ROLE=Admin`). Local convenience only; never reuse this compose file anywhere shared.
 - The collector's `metric_expiration` is 10m because DORA gauges only arrive every ~10th demo run; drop-outs on the DORA panels mean the exporter stopped, not that the metric went to zero.
+- **The bot is a oneshot in production, so every run is its own series with a single sample and `rate()` over any of them is zero.** `HealthBotSilent` asks whether the heartbeat is present rather than how fast it is ticking, and pages one `metric_expiration` plus its `for` after the last run. Panels count or aggregate the runs in a window for the same reason.
 - Traces currently go to the collector's debug log. Adding Tempo or Jaeger is a one-exporter change in `otel-collector.yaml`.

@@ -15,7 +15,7 @@
   },
   "panels": [
     {
-      "title": "SLO compliance (30d window)",
+      "title": "SLO compliance over the 30-day window",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
@@ -56,8 +56,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:healthbot_compliance:ratio_30d",
-          "legendFormat": "{{slo}}",
+          "expr": "slo:healthbot_compliance:ratio_30d\n+ on (slo) group_left (description, objective)\n(max by (slo, description, objective) (healthbot_slo_target) * 0)",
+          "legendFormat": "{{description}} \u00b7 target {{objective}}",
           "refId": "A"
         }
       ],
@@ -68,9 +68,10 @@
           ]
         },
         "textMode": "value_and_name",
-        "colorMode": "background"
+        "colorMode": "value"
       },
-      "id": 1
+      "id": 1,
+      "description": "Share of runs inside the objective, per SLI. Each tile carries the sentence and the target from config/slo.yml, so the number is read against its own objective rather than against the colour."
     },
     {
       "title": "Error-budget burn rate \u2014 1h window (page at 14.4, ticket at 6)",
@@ -194,7 +195,7 @@
       "id": 4
     },
     {
-      "title": "Check duration p95",
+      "title": "Check duration p95 over the last 15 minutes",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -218,12 +219,13 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, check) (rate(healthbot_check_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, check) (max_over_time(healthbot_check_duration_seconds_bucket[15m])))",
           "legendFormat": "{{check}}",
           "refId": "A"
         }
       ],
-      "id": 5
+      "id": 5,
+      "description": "Every oneshot run emits its own single-sample series, so the quantile is taken over the runs present in the window rather than over a rate."
     },
     {
       "title": "GA active users",
@@ -239,7 +241,28 @@
         "h": 7
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            },
+            "axisSoftMax": 700
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 700
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "targets": [
@@ -248,15 +271,16 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_site_active_users",
-          "legendFormat": "active users",
+          "expr": "max(healthbot_site_active_users)",
+          "legendFormat": "worst run in view",
           "refId": "A"
         }
       ],
-      "id": 6
+      "id": 6,
+      "description": "Realtime active users. site.yml alerts at or above 700."
     },
     {
-      "title": "APM response time \u2014 app (ms)",
+      "title": "APM response time \u2014 app",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -269,7 +293,28 @@
         "h": 7
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            },
+            "axisSoftMax": 800
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 800
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "targets": [
@@ -278,15 +323,16 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_apm_response_time{tier=\"app\"}",
-          "legendFormat": "app (ms)",
+          "expr": "max(healthbot_apm_response_time{tier=\"app\"})",
+          "legendFormat": "worst run in view",
           "refId": "A"
         }
       ],
-      "id": 7
+      "id": 7,
+      "description": "New Relic APM response time, in milliseconds as New Relic reports it. site.yml alerts at or above 800 ms."
     },
     {
-      "title": "Browser response time \u2014 web (s)",
+      "title": "Browser response time \u2014 web",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -300,7 +346,26 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            },
+            "axisSoftMax": 3.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 3.5
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -310,12 +375,13 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "healthbot_apm_response_time{tier=\"web\"}",
-          "legendFormat": "web (s)",
+          "expr": "max(healthbot_apm_response_time{tier=\"web\"})",
+          "legendFormat": "worst run in view",
           "refId": "A"
         }
       ],
-      "id": 8
+      "id": 8,
+      "description": "New Relic browser response time, in seconds as New Relic reports it. site.yml alerts at or above 3.5 s."
     },
     {
       "title": "Canary probes by status code",
@@ -349,7 +415,7 @@
       "id": 9
     },
     {
-      "title": "Heartbeat (runs/min) \u2014 the dead-man's switch",
+      "title": "Runs reporting \u2014 the dead-man's switch pages at zero",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -362,7 +428,28 @@
         "h": 7
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            },
+            "axisSoftMin": 0
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "targets": [
@@ -371,12 +458,13 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum (rate(healthbot_heartbeat_total[15m])) * 60",
-          "legendFormat": "runs/min",
+          "expr": "count(healthbot_heartbeat_total) or on() vector(0)",
+          "legendFormat": "runs reporting",
           "refId": "A"
         }
       ],
-      "id": 10
+      "id": 10,
+      "description": "Completed runs still inside the collector's 10-minute retention. At the 5-minute timer cadence a healthy bot holds 2 or 3; HealthBotSilent pages when the series is gone altogether."
     }
   ]
 }

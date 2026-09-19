@@ -88,7 +88,7 @@ def main() -> int:
     try:
         try:
             with telemetry.run_span():
-                telemetry.record_slo_targets(slo.targets())
+                telemetry.record_slo_targets(slo.load_slos())
 
                 site_config = get_config("site.yml")
                 param_store = ParameterStore()

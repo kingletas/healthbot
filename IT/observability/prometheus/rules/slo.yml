@@ -114,19 +114,20 @@ groups:
                     Sustained burn over 6h confirmed by 30m. Worth a ticket
                     before it becomes a page.
 
-          # The dead-man's switch: HealthBot has watched the estate for years
-          # with nothing watching HealthBot.
+          # The dead-man's switch: HealthBot has watched the estate for
+          # years with nothing watching HealthBot. Every oneshot run is its
+          # own single-sample series so rate() is zero on a healthy bot, and
+          # absence is the only signal left: it arrives one metric_expiration
+          # after the last run, and the for outlasts the timer's 5m period
+          # plus its 60s RandomizedDelaySec.
           - alert: HealthBotSilent
-            expr: |
-                absent_over_time(healthbot_heartbeat_total[15m])
-                or
-                sum(rate(healthbot_heartbeat_total[15m])) == 0
-            for: 5m
+            expr: absent(healthbot_heartbeat_total)
+            for: 10m
             labels:
                 severity: page
             annotations:
                 summary: "HealthBot has stopped reporting"
                 description: >-
-                    No heartbeat for 15 minutes: the monitor itself is down,
-                    crashed, or cannot reach the collector. This is the alert
-                    that fires when every other alert cannot.
+                    No run has reported for 20 minutes: the monitor itself is
+                    down, crashed, or cannot reach the collector. This is the
+                    alert that fires when every other alert cannot.

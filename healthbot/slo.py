@@ -25,10 +25,6 @@ def load_slos(config_file: str | None = None) -> list:
         return yaml.safe_load(fp).get("slos")
 
 
-def targets(slos: list | None = None) -> dict:
-    return {slo["name"]: slo["target"] for slo in (slos or load_slos())}
-
-
 def evaluate_run(message_data: dict, run_completed: bool, slos: list | None = None) -> list:
     """
     One (name, good) verdict per SLI for this run. A signal that could not be
