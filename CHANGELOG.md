@@ -51,9 +51,9 @@ first release's notes.
 - **A local environment that runs the real bot.** `IT/local/` brings up a stub
   storefront, Mattermost standing in for Slack, and an AWS emulator, so
   `main()` runs end to end on a laptop, checkout journey and alert delivery
-  included. Nine integration tests drive it.
-- **A test suite.** 75 tests where there had been one assertion, covering the
-  AWS, ping, notification and telemetry boundaries.
+  included. An integration suite drives it.
+- **A test suite** where there had been one assertion, covering the AWS,
+  canary, notification and telemetry boundaries.
 - **Two CI workflows**, path-gated: the Python gate builds and uploads the wheel,
   and the infrastructure gate validates Terraform and the playbook without
   credentials.

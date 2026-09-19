@@ -79,7 +79,7 @@ curl -s -X POST http://localhost:8081/control -d '{"ga_surge": true}'
 uv run pytest -m integration
 ```
 
-Nine tests, skipped automatically when the stack is not up. The suite seeds nothing, so run `healthbot-local seed` first. The two worth knowing by name: `test_full_run` executes the production `main()` against the whole stack and asserts exit 0 with no alert; `test_staged_outage_pages_into_mattermost` flips `ga_surge` and asserts the rendered alert actually arrived in `~town-square`, not merely that the send did not error.
+Skipped automatically when the stack is not up. They read the same `HB_LOCAL_*` overrides the seeder does, so a stack on different ports still gets tested. The suite seeds nothing, so run `healthbot-local seed` first. The two worth knowing by name: `test_full_run` executes the production `main()` against the whole stack and asserts exit 0 with no alert; `test_staged_outage_pages_into_mattermost` flips `ga_surge` and asserts the rendered alert actually arrived in `~town-square`, not merely that the send did not error.
 
 The unit suite (`uv run pytest`, no marker) never touches this stack, because `-m 'not integration'` is the configured default.
 

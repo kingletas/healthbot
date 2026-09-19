@@ -22,14 +22,15 @@ import requests
 
 pytestmark = pytest.mark.integration
 
-# Same override the seeder reads, so pointing one at a different MiniStack
-# cannot leave the tests asserting against another.
+# The same overrides the seeder reads, so pointing one of them at a stack on
+# different ports cannot leave the tests asserting against another. Hardcoded,
+# they skipped the whole suite on any machine where 8080 was already taken.
 AWS_ENDPOINT = environ.get("HB_LOCAL_AWS_ENDPOINT", "http://172.17.0.1:4566")
-STORE = "http://localhost:8080"
-API = "http://localhost:8081"
-MATTERMOST = "http://localhost:8065"
+STORE = environ.get("HB_LOCAL_STORE_BASE", "http://localhost:8080")
+API = environ.get("HB_LOCAL_API_BASE", "http://localhost:8081")
+MATTERMOST = environ.get("HB_LOCAL_MATTERMOST", "http://localhost:8065")
 REPO_ROOT = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
-LOCAL_CONFIG = path.join(REPO_ROOT, "IT", "local", "config")
+LOCAL_CONFIG = environ.get("HB_CONFIG_DIR") or path.join(REPO_ROOT, "IT", "local", "config")
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -157,7 +158,7 @@ def test_full_run():
     from healthbot.healthbot import main
 
     before = len(mattermost_posts())
-    assert main() == 0
+    assert main([]) == 0
     assert len(mattermost_posts()) == before  # calm run, no alert
 
 
@@ -172,7 +173,7 @@ def test_staged_outage_pages_into_mattermost():
 
     before = len(mattermost_posts())
     control(ga_surge=True)
-    assert main() == 0
+    assert main([]) == 0
     time.sleep(1)  # relay is async fire-and-forget from the run's view
     posts = mattermost_posts()
     assert len(posts) == before + 1
@@ -180,12 +181,16 @@ def test_staged_outage_pages_into_mattermost():
     # Assert real rendered content, not just the bot's name, because the shim's
     # own fallback placeholder contains "HealthBot", which once let a broken
     # relay pass this test.
-    assert "SRE check" in newest["message"]
+    assert "Why this alert fired" in newest["message"]
     assert "Checkout" in newest["message"]
-    # The surge count itself, not just the words around it: `*None* active
-    # users` also contains "active users", so the loose assertion passed
-    # while Universal Analytics was returning nothing at all.
-    assert "*934* active users" in newest["message"]
+    # The push line, which the shim labels and puts first. It named only the
+    # checkout journey and the canary sweep, so a surge reached a locked phone
+    # reading "all checks passed".
+    assert "Active users: 934, limit 700" in newest["message"].splitlines()[0]
+    # The surge count itself, not just the words around it: `*None*` also
+    # contains the label, so the loose assertion passed while Universal
+    # Analytics was returning nothing at all.
+    assert "*934*" in newest["message"]
 
 
 def test_ga4_realtime_report_is_read_through_the_real_client():
@@ -233,7 +238,7 @@ def test_sns_alert_lands_on_the_local_topic():
     from healthbot.healthbot import main
 
     control(checkout_down=True)
-    assert main() == 0
+    assert main([]) == 0
 
     sns = boto3.client("sns", endpoint_url=AWS_ENDPOINT, region_name="us-east-1")
     topics = [t["TopicArn"] for t in sns.list_topics()["Topics"]]

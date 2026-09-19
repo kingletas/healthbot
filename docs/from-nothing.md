@@ -74,8 +74,14 @@ The first stack is the AWS emulator. Anything that serves the LocalStack API on
 port 4566 will do:
 
 ```bash
-docker run -d --name ministack -p 4566:4566 localstack/localstack
+docker run -d --name ministack -p 4566:4566 localstack/localstack:4.9
 ```
+
+Pin a version rather than taking `latest`. The `latest` tag wants a paid auth
+token and quits on start without one, and all you see is the next command
+failing to connect, with nothing about a licence. An emulator much older than
+this one answers the health check and then rejects the CloudWatch writes
+`make seed` makes, which is a confusing place to find out.
 
 The second is HealthBot's own: a stub storefront, a stub for New Relic and
 Google Analytics, Mattermost standing in for Slack, and the observability stack

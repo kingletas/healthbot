@@ -44,7 +44,7 @@ test: ## The unit suite. Integration is a separate target because it needs the s
 	@$(UV) run pytest -q
 
 .PHONY: integration
-integration: ## The nine tests that drive the IT/local stack. Needs `make up` and `make seed`
+integration: ## The tests that drive the IT/local stack. Needs `make up` and `make seed`
 	@$(UV) run pytest -q -m integration
 
 # Tracked HCL only: -recursive walks into a developer's own gitignored

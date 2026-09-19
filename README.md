@@ -71,7 +71,7 @@ uv run healthbot-local seed
 uv run healthbot-local run-env      # prints the fully-wired run command
 ```
 
-Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos switches on the stub (`POST :8081/control`) stage outages on demand. The integration suite runs the whole loop: `uv run pytest -m integration` (nine tests, auto-skipped when the stack is down). See `IT/local/README.md` for the seams and the gotchas.
+Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos switches on the stub (`POST :8081/control`) stage outages on demand. The integration suite runs the whole loop: `uv run pytest -m integration`, auto-skipped when the stack is down. See `IT/local/README.md` for the seams and the gotchas.
 
 ## Runtime configuration
 
