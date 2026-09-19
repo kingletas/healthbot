@@ -1,0 +1,67 @@
+# Every variable this configuration requires, with invented values.
+#
+# Copy it to terraform.tfvars and replace the marked values. Every tfvars file
+# is gitignored, so this example is the only tracked list of what a plan needs.
+#
+#     cp terraform.tfvars.example terraform.tfvars
+#
+# tf-vars-check.sh refuses a commit where this file and variables.tf disagree,
+# in either direction: a required variable missing here, or a name here that
+# nothing declares. The second is what let ga_view_id outlive the GA4 rename.
+
+# --- the deployment ---
+
+name        = "healthbot"
+environment = "production"
+region      = "us-east-1"
+
+# The named AWS profile terraform authenticates with. Replace.
+profile = "replace-with-your-aws-profile"
+
+# What the bot calls its own environment, and the Environment tag value it
+# filters the fleet on.
+app_environment_name     = "production"
+app_environment_tag_name = "web"
+
+# --- infrastructure that must already exist ---
+# Read through data sources, so a plan fails until each one resolves. Replace
+# all four with the identifiers of your own account.
+
+vpc_id                = "vpc-00000000000000000"
+subnet_id             = "subnet-00000000000000000"
+db_cluster_identifier = "replace-with-your-aurora-cluster-identifier"
+sns_name              = "replace-with-your-sns-topic-name"
+
+# --- files read off disk at plan time ---
+# Both are read with file(), so a plan fails if either path is wrong. Replace.
+
+ssh_key      = { public = "~/.ssh/healthbot.pub" }
+secrets_path = "~/.config/healthbot/ga-service-account.json"
+
+# --- network ---
+
+ingress_map = {
+  ssh = { from_port = 22, to_port = 22, protocol = "tcp", cidr_blocks = ["10.0.0.0/8"] }
+}
+
+egress_map = { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }
+
+# --- vendor credentials ---
+# Invented placeholders. These are seeded into Secrets Manager on the first
+# apply and rotated there afterwards, so replace each one before deploying.
+
+slack_channel    = "#healthbot"
+slack_token      = "replace-with-the-slack-bot-token"
+user_slack_token = "replace-with-the-slack-user-token"
+king_slack_token = "replace-with-the-slack-debug-token"
+
+# The 555 range is reserved for fiction and reaches nobody.
+twilio_to      = 15555550100
+twilio_from    = 15555550101
+twilio_account = "replace-with-the-twilio-account-sid"
+twilio_token   = "replace-with-the-twilio-auth-token"
+
+# Numeric, or properties/<id>.
+ga_property_id = "properties/000000000"
+
+new_relic_api = "replace-with-the-new-relic-api-key"
