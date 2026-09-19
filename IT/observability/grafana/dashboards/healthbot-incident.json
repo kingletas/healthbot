@@ -1,0 +1,728 @@
+{
+    "uid": "healthbot-incident",
+    "title": "HealthBot Incident \u2014 one screen when something is wrong",
+    "tags": [
+        "healthbot",
+        "incident"
+    ],
+    "schemaVersion": 39,
+    "version": 1,
+    "editable": true,
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+        "from": "now-6h",
+        "to": "now"
+    },
+    "panels": [
+        {
+            "id": 1,
+            "type": "gauge",
+            "title": "Worst error-budget burn (1h)",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 6,
+                "h": 5
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "max(slo:healthbot_burn_rate:rate1h) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "decimals": 1,
+                    "min": 0,
+                    "max": 20,
+                    "mappings": [
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NO SLO DATA",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "No objective has reported",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 6
+                            },
+                            {
+                                "color": "red",
+                                "value": 14.4
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "The fastest any objective is spending its error budget. The two numbers that decide what happens next are drawn on the dial rather than left to be remembered: 6 opens a ticket, 14.4 pages. At 14.4 the 30-day budget is gone in about two days.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            }
+        },
+        {
+            "id": 2,
+            "type": "stat",
+            "title": "Store, or the monitor?",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 6,
+                "y": 0,
+                "w": 6,
+                "h": 5
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "clamp_max(sum(healthbot_slo_events_total{slo=\"monitor_availability\",result=\"bad\"}), 1) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "Monitor healthy \u2014 look at the store",
+                                    "color": "green",
+                                    "index": 0
+                                },
+                                "1": {
+                                    "text": "MONITOR FAILING \u2014 the bot crashed",
+                                    "color": "red",
+                                    "index": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NO DATA \u2014 the monitor may be gone",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "The first question of any HealthBot incident. A run that crashes says nothing about the store, and the code is careful to record only the monitor's own SLI when that happens. Bad monitor runs currently reporting; under the oneshot shape that is the last 10 minutes.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 3,
+            "type": "stat",
+            "title": "Checks failing \u2014 the store",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 12,
+                "y": 0,
+                "w": 6,
+                "h": 5
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(healthbot_check_result_total{status=\"fail\"}) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "None",
+                                    "color": "green",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NO DATA",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Checks that ran and returned a bad verdict about the store.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 4,
+            "type": "stat",
+            "title": "Checks erroring \u2014 HealthBot",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 18,
+                "y": 0,
+                "w": 6,
+                "h": 5
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(healthbot_check_result_total{status=\"error\"}) or on() vector(0)",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "None",
+                                    "color": "green",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "special",
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "NO DATA",
+                                    "color": "red",
+                                    "index": 90
+                                }
+                            }
+                        }
+                    ],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Checks that threw instead of returning a verdict. This is a bug here, not an outage there.",
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true
+            }
+        },
+        {
+            "id": 5,
+            "type": "bargauge",
+            "title": "Which objective is burning \u2014 ticket at 6\u00d7, page at 14.4\u00d7",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 5,
+                "w": 12,
+                "h": 9
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "slo:healthbot_burn_rate:rate1h",
+                    "refId": "A",
+                    "legendFormat": "{{slo}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 20,
+                    "decimals": 1,
+                    "noValue": "No objective has reported an event",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 6
+                            },
+                            {
+                                "color": "red",
+                                "value": 14.4
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Burn rate per objective against the same two thresholds, drawn on the track rather than left to the reader. An objective missing from this list has had no events in the window.",
+            "options": {
+                "displayMode": "gradient",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "text",
+                "minVizWidth": 8,
+                "minVizHeight": 16
+            }
+        },
+        {
+            "id": 6,
+            "type": "table",
+            "title": "Which check is unhappy",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 12,
+                "y": 5,
+                "w": 12,
+                "h": 9
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (check, status) (healthbot_check_result_total{status!=\"pass\"})",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false,
+                    "format": "table"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "noValue": "Every check is passing",
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "orange"
+                    }
+                },
+                "overrides": []
+            },
+            "description": "Only non-passing states appear, so an empty panel is the healthy state \u2014 which is why it says so in words rather than rendering blank. A count, not a magnitude: one unhappy check drawn as a full bar would read as the worst possible state, which is why this is a table.",
+            "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "sortBy": [
+                    {
+                        "displayName": "Runs",
+                        "desc": true
+                    }
+                ],
+                "footer": {
+                    "show": false,
+                    "reducer": [
+                        "sum"
+                    ],
+                    "countRows": false,
+                    "fields": ""
+                }
+            },
+            "transformations": [
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "Time": true
+                        },
+                        "indexByName": {
+                            "check": 0,
+                            "status": 1,
+                            "Value": 2
+                        },
+                        "renameByName": {
+                            "check": "Check",
+                            "status": "State",
+                            "Value": "Runs"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 7,
+            "type": "timeseries",
+            "title": "When it started \u2014 non-passing checks over time",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 0,
+                "y": 14,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (check, status) (healthbot_check_result_total{status!=\"pass\"})",
+                    "refId": "A",
+                    "legendFormat": "{{check}} \u00b7 {{status}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "noValue": "Nothing has failed in this window",
+                    "custom": {
+                        "drawStyle": "line",
+                        "lineWidth": 2,
+                        "fillOpacity": 10,
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "lineInterpolation": "stepAfter"
+                    }
+                },
+                "overrides": []
+            },
+            "description": "The step up is the moment it began. Gaps are left unjoined: a period with no runs is not a period with no failures, and drawing a line across it would invent data."
+        },
+        {
+            "id": 8,
+            "type": "table",
+            "title": "Canary URLs not returning 200",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "gridPos": {
+                "x": 12,
+                "y": 14,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum by (url, status_code) (healthbot_probe_http_status_total{status_code!=\"200\"})",
+                    "refId": "A",
+                    "instant": true,
+                    "range": false,
+                    "format": "table"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "noValue": "Every canary URL returned 200",
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "red"
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Answered with"
+                        },
+                        "properties": [
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "type": "value",
+                                        "options": {
+                                            "0": {
+                                                "text": "no reply at all",
+                                                "color": "red",
+                                                "index": 0
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "description": "Which URL, and what it answered. A status code of 0 is the probe never getting a reply at all. Empty is the healthy state.",
+            "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "sortBy": [
+                    {
+                        "displayName": "Responses",
+                        "desc": true
+                    }
+                ],
+                "footer": {
+                    "show": false,
+                    "reducer": [
+                        "sum"
+                    ],
+                    "countRows": false,
+                    "fields": ""
+                }
+            },
+            "transformations": [
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "Time": true
+                        },
+                        "indexByName": {
+                            "url": 0,
+                            "status_code": 1,
+                            "Value": 2
+                        },
+                        "renameByName": {
+                            "url": "URL",
+                            "status_code": "Answered with",
+                            "Value": "Responses"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 9,
+            "type": "text",
+            "title": "Logs \u2014 waiting on Loki",
+            "gridPos": {
+                "x": 0,
+                "y": 22,
+                "w": 8,
+                "h": 13
+            },
+            "options": {
+                "mode": "markdown",
+                "content": "**Placeholder. No log panel can be built today, because HealthBot emits no logs over OTLP.**\n\n`telemetry.py` builds a `TracerProvider` and a `MeterProvider` and no `LoggerProvider`, so there is nothing downstream to collect. Run logs go to `HB_LOG_DIR` on the host and stop there.\n\n**What lands here:** a logs panel filtered to the run that matches the failure above, so the error message sits on the same screen as the check that produced it.\n\n**What has to happen first**\n\n1. A `LoggerProvider` in `telemetry.py`, behind the same enablement check everything else uses.\n2. A Loki container and a `loki` exporter on the collector.\n3. A Loki datasource, provisioned like the Prometheus one.\n\nStep 2 of the observability completion plan."
+            },
+            "transparent": false
+        },
+        {
+            "id": 10,
+            "type": "text",
+            "title": "Traces \u2014 waiting on Tempo",
+            "gridPos": {
+                "x": 8,
+                "y": 22,
+                "w": 8,
+                "h": 13
+            },
+            "options": {
+                "mode": "markdown",
+                "content": "**Placeholder. The spans already exist and are being thrown away.**\n\nEvery run produces a root span with a child span per check, carrying the check's status as an attribute. The collector receives them and writes them to its debug log, which nothing reads. Its own config says as much.\n\n**What lands here:** the slowest runs in the window, and a trace view that opens the run behind a failing check \u2014 the step from *which check failed* to *where the time went* without leaving the screen.\n\n**What has to happen first**\n\n1. A Tempo container.\n2. Replace `debug` with `otlp` in the collector's trace pipeline. One line.\n3. A Tempo datasource, and `exemplars` wired so a metric can jump to a trace.\n\nStep 3 of the plan, and the cheapest of the three: nothing in the bot changes."
+            },
+            "transparent": false
+        },
+        {
+            "id": 11,
+            "type": "text",
+            "title": "Deploy markers \u2014 not emitted",
+            "gridPos": {
+                "x": 16,
+                "y": 22,
+                "w": 8,
+                "h": 13
+            },
+            "options": {
+                "mode": "markdown",
+                "content": "**Placeholder, and this one is not waiting on a container.**\n\n*Did this start at a deploy?* is usually the second question of an incident, and it cannot be answered here. Deploys are recorded, but only as an aggregate.\n\n`healthbot-dora record deploy --sha \u2026` appends to a JSONL journal, and `export` turns 30 days of it into four gauges \u2014 frequency, lead time, failure ratio, MTTR. **The individual deploy, with its timestamp and its sha, never reaches Prometheus.** A gauge saying 0.37 deploys a day cannot place a line on a time axis.\n\n**What lands here:** deploy annotations across every timeseries on this dashboard, so an incident either sits on a deploy or visibly does not.\n\n**What has to happen first:** the deploy event itself carried into the stack \u2014 a counter incremented at deploy time with the sha as a label, or the journal exposed to Loki and used as an annotation source."
+            },
+            "transparent": false
+        }
+    ]
+}
