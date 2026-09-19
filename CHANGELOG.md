@@ -150,8 +150,11 @@ first release's notes.
   panels can be compared.
 - **The SLO headline reads in words.** Each tile names the objective from
   `config/slo.yml` and the target it is measured against, rather than
-  printing a metric key and leaving the colour to carry the verdict. The
-  `healthbot_slo_target` gauge now carries `description` and `objective`
+  printing a metric key and leaving the colour to carry the verdict. It shows
+  how far the objective is above or below its own target, so the sign is the
+  verdict and one threshold is right for all five; the panel used to colour
+  every objective against a hardcoded 99%, which was wrong for two of them.
+  The `healthbot_slo_target` gauge now carries `description` and `objective`
   labels to make that possible.
 - **The DORA panels can show what they plot.** Four metrics spanning six
   orders of magnitude shared one linear axis, so three of them were a flat
