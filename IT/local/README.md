@@ -2,11 +2,11 @@
 
 Everything a real `healthbot` run touches, emulated on one laptop. Where `IT/observability` renders what the bot *emits*, this stack stands in for what the bot *consumes*, so the production `main()`, all five checks, runs end to end with exit codes, alerts and telemetry you can watch.
 
-AWS is played by **an emulator this compose file does not define**. Anything serving the LocalStack API on `172.17.0.1:4566` will do, and it is deliberately outside this project so one emulator can serve every project on a machine. Start it before this stack.
+AWS is played by **MiniStack, which this compose file does not define**. It listens on `172.17.0.1:4566` and is deliberately outside this project, so one emulator serves every project on a machine. Start it before this stack. It speaks the LocalStack API, so anything expecting that will talk to it, but the free tier of that other emulator does not implement RDS and this tree reads one, so they are not interchangeable here.
 
 | Stand-in | Plays | Where |
 |---|---|---|
-| a LocalStack-compatible emulator (shared, defined elsewhere) | SSM Parameter Store, Secrets Manager, EC2, CloudWatch, SNS | `172.17.0.1:4566` |
+| MiniStack (shared, defined elsewhere) | SSM Parameter Store, Secrets Manager, EC2, CloudWatch, SNS, RDS | `172.17.0.1:4566` |
 | Mattermost (preview image) | Slack, with messages landing in `~town-square` | `:8065` |
 | stub container | the storefront (Playwright checkout journey and the canary sweep) | `:8080` |
 | stub container | New Relic v2 API, GA discovery/token/realtime, the Slack→Mattermost shim, chaos switches | `:8081` |
@@ -91,7 +91,7 @@ The unit suite (`uv run pytest`, no marker) never touches this stack, because `-
 - **Do not look for `cloudwatch` in the emulator's health list.** It names services by their AWS API namespace, so CloudWatch appears as `monitoring`.
 - **The CloudWatch leg depends on the emulator accepting publishes into `AWS/*` namespaces**, which real AWS refuses. `test_localstack_accepts_aws_namespace_datapoints` exists to name this if an emulator upgrade ever regresses it; it keeps its original name because it guards the behaviour, not the vendor.
 - **A datapoint is not readable the instant it is published.** The emulator indexes `put_metric_data` with a sub-second lag, so publishing and reading back in the same breath can return an empty window. Nothing in the normal flow is that tight, since `seed` and a run are seconds apart, but a test that does both in one function needs to allow for it.
-- **The seeded AWS resources sit in an account shared with other projects.** Every name HealthBot creates is prefixed or suffixed distinctly (`/healthbot-sm/manager/*`, `healthbot-local`, `healthbot-local-alerts`, the `EXAMPLE-WEB-01` instance tagged `Local-FLEET`), and seeding stays idempotent, so a reseed does not disturb another project. LocalStack supports multi-account and multi-region if stronger isolation is ever needed.
+- **The seeded AWS resources sit in an account shared with other projects.** Every name HealthBot creates is prefixed or suffixed distinctly (`/healthbot-sm/manager/*`, `healthbot-local`, `healthbot-local-alerts`, the `EXAMPLE-WEB-01` instance tagged `Local-FLEET`), and seeding stays idempotent, so a reseed does not disturb another project. The emulator supports multi-account and multi-region if stronger isolation is ever needed.
 - **slack_sdk sends `chat.postMessage` as a JSON body when blocks are attached**, urlencoded otherwise. The shim accepts both; the first version read only form data and every alert degraded to a placeholder, and that placeholder contained the word "HealthBot", which let the original content assertion pass. Hence the pointedly specific asserts in `test_staged_outage_pages_into_mattermost`.
 - **`PUBLIC_API_BASE` on the stub container must be the host-visible base** (`http://localhost:8081`), because it is templated into the GA discovery document that the host-side bot follows back. The compose-internal hostname would only work for another container.
 - **`healthbot-local` cannot be pointed at real AWS.** Clients are built with an explicit endpoint pinned to a local host and static dummy credentials; a non-local endpoint is a hard refusal, no override flag. This is deliberate. See the standing rule about never executing against AWS.
