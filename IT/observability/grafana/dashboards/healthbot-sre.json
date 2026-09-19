@@ -276,7 +276,7 @@
       "description": "Realtime active users. site.yml alerts at or above 700."
     },
     {
-      "title": "APM response time \u2014 app",
+      "title": "APM response time, app tier",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -328,7 +328,7 @@
       "description": "New Relic APM response time, in milliseconds as New Relic reports it. site.yml alerts at or above 800 ms."
     },
     {
-      "title": "Browser response time \u2014 web",
+      "title": "Browser response time, web tier",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -411,7 +411,7 @@
       "id": 9
     },
     {
-      "title": "Runs reporting \u2014 the dead-man's switch pages at zero",
+      "title": "Runs reporting (the dead-man's switch pages at zero)",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
