@@ -9,6 +9,17 @@ first release's notes.
 
 ### Added
 
+- **`terraform.tfvars.example` lists every variable a plan needs.** Every
+  `*.tfvars` file is gitignored, so a clone had nothing to copy and no way to
+  learn what the twenty-four required variables were short of reading
+  `variables.tf`. Copy it, replace the values it marks, and a plan runs.
+
+- **`make terraform` refuses a tfvars file that disagrees with `variables.tf`.**
+  In both directions: a required variable the example fails to supply, and a
+  name in the example that nothing declares. Terraform errors on the first and
+  only warns on the second, which is how `ga_view_id` survived the rename to
+  `ga_property_id` and left a plan that could not run.
+
 - **`make tf-local` plans the infrastructure against a local AWS emulator.** It
   needs no AWS account and no credentials: point a LocalStack-compatible
   emulator at `172.17.0.1:4566`, or set `HB_LOCAL_AWS_ENDPOINT` to wherever

@@ -55,6 +55,7 @@ terraform: ## Format and validate the infrastructure, with no credentials and no
 	@cd $(ROOT_DIR)/IT/terraform && terraform fmt -check $$(git ls-files '*.tf' | sed 's|^IT/terraform/||')
 	@cd $(ROOT_DIR)/IT/terraform && terraform init -backend=false -input=false >/dev/null
 	@cd $(ROOT_DIR)/IT/terraform && terraform validate
+	@$(ROOT_DIR)/IT/terraform/tf-vars-check.sh
 
 # hatchling reads .gitignore, not git's index, so an unanchored pattern can
 # drop a tracked module out of the wheel with nothing to say it did. That is

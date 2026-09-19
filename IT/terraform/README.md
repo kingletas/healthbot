@@ -1,5 +1,17 @@
 # terraform
 
+## Supplying the variables
+
+Every `*.tfvars` file is gitignored, so `terraform.tfvars.example` is the only tracked list of what a plan needs. Copy it and replace the values it marks:
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Twenty-four variables are declared with no default, and a plan stops on the first one it cannot find. Six of them name infrastructure or files that must already exist: `vpc_id`, `subnet_id`, `db_cluster_identifier`, `sns_name`, `ssh_key` and `secrets_path`.
+
+`make terraform` runs `tf-vars-check.sh`, which refuses a commit where the example and `variables.tf` disagree in either direction: a required variable the example does not supply, or a name in the example that nothing declares. Terraform itself only catches the first of those, and treats the second as a warning. That asymmetry is how `ga_view_id` outlived the rename to `ga_property_id`, leaving the value supplied under a name that reached nothing.
+
 ## Planning without an AWS account
 
 `make tf-local` plans this configuration against a local AWS emulator, so you can check it is coherent with no account and no credentials.
