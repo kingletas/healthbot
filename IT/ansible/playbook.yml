@@ -104,6 +104,15 @@
             mode: "0750"
             recurse: true
 
+      # This template replaces the whole file, including the two lines
+      # cloud-init wrote at first boot, so the prefix has to be declared here.
+      - name: Refuse to deploy without the Parameter Store prefix
+        ansible.builtin.assert:
+            that: "'HB_PARAM_PREFIX' in healthbot_env"
+            fail_msg: >-
+                healthbot_env carries no HB_PARAM_PREFIX, so every run would
+                read site.yml's prefix instead of the one Terraform created
+
       # Rendered from group_vars rather than copied from a committed file:
       # the env file is configuration, not a secret, and belongs in vars
       - name: Render the environment file

@@ -90,6 +90,14 @@ first release's notes.
   re-reads the type off the first line of the body. It now says
   `text/cloud-config`, so the right handler is chosen rather than guessed.
 
+- **A deploy refuses to run without `HB_PARAM_PREFIX`.** The playbook renders
+  `/etc/healthbot.env` from `healthbot_env`, replacing the whole file including
+  the two lines cloud-init wrote at first boot. With the prefix missing from
+  `group_vars`, every run afterwards read the packaged `site.yml` prefix instead
+  of the one Terraform created, and failed on a parameter that was never going
+  to be there. The play now stops before the file is written and says which key
+  is missing.
+
 - **The DORA journal's location is a deploy setting, and the repository says
   what is at stake.** Set `healthbot_dora_events` in `group_vars/all.yml`. It
   keeps the old path, so nothing moves unless you move it. The journal is
