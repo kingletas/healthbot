@@ -305,6 +305,14 @@ first release's notes.
   a heartbeat, so the dead-man's switch is correctly quiet and nothing else was
   watching. Runs now accumulate into one series and the rules read what they
   were always meant to read.
+- **The incident dashboard no longer reports a dead monitor as a healthy one.**
+  *Store, or the monitor?* asked for a count of bad monitor runs and treated an
+  empty answer as zero, so a bot that had stopped reporting read **Monitor
+  healthy, look at the store**, which is the opposite of what had happened. The
+  worst-burn dial read 0.0 in the same state, and the two failing-check tiles
+  read *None*. All four now tell no data apart from no failures and say **NOT
+  REPORTING**, using the same liveness test the operations dashboard already
+  used, so the two screens cannot disagree about whether the bot is alive.
 - **`make tf-local` reseeds the emulator instead of trusting a stale state
   file.** The emulator is a container and loses its resources when it restarts,
   while the harness kept a state file claiming they were still there. The next
