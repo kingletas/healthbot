@@ -48,7 +48,7 @@ def synth_message_data(rng: random.Random, failure_rate: float) -> dict:
         "app_response_time": max(120.0, rng.gauss(480, 90)),
         "web_response_time": max(0.8, rng.gauss(2.4, 0.5)),
         "is_checkout_up": True,
-        "ping_ok": True,
+        "canary_ok": True,
     }
     roll = rng.random()
     if roll < failure_rate / 2:
@@ -75,16 +75,16 @@ def emit_run(rng: random.Random, failure_rate: float) -> dict:
             if message_data["is_checkout_up"] is not True:
                 check.set_status("fail")
 
-        with telemetry.check_span("pings") as check:
-            probe_results = []
+        with telemetry.check_span("canary") as check:
+            canary_results = []
             for url in DEMO_URLS:
                 status = 200
-                if not message_data["ping_ok"] or rng.random() < failure_rate / 4:
+                if not message_data["canary_ok"] or rng.random() < failure_rate / 4:
                     status = rng.choice([500, 503, 0])
-                probe_results.append((url, status))
-            telemetry.record_probe_statuses(probe_results)
-            if any(status != 200 for _, status in probe_results):
-                message_data["ping_ok"] = False
+                canary_results.append((url, status))
+            telemetry.record_canary_statuses(canary_results)
+            if any(status != 200 for _, status in canary_results):
+                message_data["canary_ok"] = False
                 check.set_status("fail")
 
         telemetry.record_business_metrics(message_data)

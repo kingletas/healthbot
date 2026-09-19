@@ -44,7 +44,7 @@ test: ## The unit suite. Integration is a separate target because it needs the s
 	@$(UV) run pytest -q
 
 .PHONY: integration
-integration: ## The nine tests that drive the IT/local stack. Needs `make up` and `make seed`
+integration: ## The tests that drive the IT/local stack. Needs `make up` and `make seed`
 	@$(UV) run pytest -q -m integration
 
 # Tracked HCL only: -recursive walks into a developer's own gitignored
@@ -134,9 +134,13 @@ seed: ## Seed the local AWS emulator with parameters, secrets, an instance and a
 run-env: ## Print the fully-wired command that runs the bot against the local stack
 	@$(UV) run healthbot-local run-env
 
+# `make up` just started this collector, so the target carries the endpoint
+# rather than refusing and naming it. Override it to point somewhere else.
+OTEL_ENDPOINT ?= http://localhost:4318
+
 .PHONY: demo
 demo: ## Drive the whole telemetry pipeline with synthetic runs through the real code path
-	@$(UV) run healthbot-demo
+	@HB_OTEL_ENABLED=1 OTEL_EXPORTER_OTLP_ENDPOINT=$(OTEL_ENDPOINT) $(UV) run healthbot-demo $(ARGS)
 
 # --- shipping ---
 

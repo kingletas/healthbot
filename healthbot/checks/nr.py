@@ -51,7 +51,7 @@ def get_new_relic_data(secrets: dict, name_filter: str | None = None) -> dict:
         )
         # summary can be missing (lookup failed) or None (app exists but the
         # summary has no data yet). Either way there is nothing to merge, and
-        # can_notify treats the absent keys as "could not check".
+        # The signal table treats the absent keys as "could not check".
         summary_data = data.get("summary")
         if not summary_data:
             logger.error(f"New Relic returned no {summary}; metrics for '{message_key}' omitted")

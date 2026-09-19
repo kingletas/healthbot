@@ -8,7 +8,8 @@ from requests import codes
 
 # Local imports
 from healthbot import telemetry
-from healthbot.config_files import get_config
+from healthbot.config_files import get_config, with_trailing_slash
+from healthbot.errors import ConfigurationError
 from healthbot.logs import logger
 
 # A hung origin must not hang the run, because the timer fires again in five
@@ -42,9 +43,18 @@ async def check_url(session, url: str) -> int:
 
 
 async def work() -> list:
-    base_url = get_config("site.yml").get("base_url")
-    urls = [base_url + ping_url for ping_url in get_config("site.yml").get("ping_urls")]
+    site_config = get_config("site.yml")
+    base_url = with_trailing_slash(site_config.get("base_url"))
+    canary_urls = site_config.get("canary_urls")
 
+    if canary_urls is None:
+        raise ConfigurationError(
+            "site.yml has no canary_urls, so there is nothing to sweep. "
+            "Add canary_urls with the paths to check, or rename an older "
+            "ping_urls to canary_urls."
+        )
+
+    urls = [base_url + path.lstrip("/") for path in canary_urls]
     urls.insert(0, base_url)
 
     timeout = ClientTimeout(total=REQUEST_TIMEOUT_SECONDS)
@@ -62,10 +72,10 @@ def all_ok(statuses: list) -> bool:
     return len(statuses) > 0 and all(status == codes.ok for status in statuses)
 
 
-def ping_site() -> bool:
+def check_canary_urls() -> bool:
     start_time = time.time()
     results = asyncio.run(work())
     logger.debug("--- %s seconds ---" % (time.time() - start_time))
 
-    telemetry.record_probe_statuses(results)
+    telemetry.record_canary_statuses(results)
     return all_ok([status for _, status in results])

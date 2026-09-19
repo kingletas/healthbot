@@ -5,9 +5,11 @@
 # alerting block.
 
 base_url: https://store.example.com/
-product_url: example-product.html
 search_term: "blue shirt"
-ping_urls:
+
+# Paths the canary sweep asks for, joined onto base_url. Every one has to
+# answer 200, or the run pages.
+canary_urls:
     - example-category.html
     - checkout
     - checkout/cart
@@ -22,14 +24,13 @@ new_relic_app_filter: ""
 logo_url: ""
 logo_alt: ""
 
-test.checkout: true
-test.customer: true
-test.product: true
-test.giftcard: false
-
-### Alert and configuration
-alert_limit: 700
+### Alerting. Each of these is an upper bound: the run pages when the reading
+### reaches it. The three do not share a unit, so each one states its own.
+# Google Analytics realtime users. An upper bound, so it fires on a surge.
+active_users_alert: 700
+# New Relic Browser response time, in seconds.
 web_response_alert: 3.5
+# New Relic APM response time, in milliseconds.
 app_response_alert: 800
 
 sms_alert_message: "High alert triggered. Check Slack for details."

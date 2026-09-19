@@ -81,7 +81,7 @@ def test_business_and_slo_recorders():
     )
     telemetry.record_slo_events([("checkout_availability", True), ("canary_availability", False)])
     telemetry.record_slo_targets({"checkout_availability": 0.99})
-    telemetry.record_probe_statuses([("https://x/", 200), ("https://x/y", 503)])
+    telemetry.record_canary_statuses([("https://x/", 200), ("https://x/y", 503)])
     telemetry.record_dora({"mttr_seconds": 120.0})
 
     collected = _collect()
@@ -92,7 +92,7 @@ def test_business_and_slo_recorders():
         ("checkout_availability", "good"),
         ("canary_availability", "bad"),
     }
-    probes = collected["healthbot.probe.http.status"]
+    probes = collected["healthbot.canary.http.status"]
     assert any(p.attributes["status_code"] == "503" for p in probes)
     dora = collected["healthbot.dora.metric"]
     assert dora and dora[-1].attributes["metric"] == "mttr_seconds"

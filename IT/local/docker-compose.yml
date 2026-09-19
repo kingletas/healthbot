@@ -10,13 +10,12 @@
 # is no manual step between seeding and running.
 #
 # Who plays whom:
-#     MiniStack    -> SSM, Secrets Manager, EC2, CloudWatch, SNS. NOT
-#                     defined here: it is the shared workstation emulator
-#                     at ~/Services/dev-services, on
+#     AWS emulator -> SSM, Secrets Manager, EC2, CloudWatch, SNS. NOT
+#                     defined here: any LocalStack-compatible emulator on
 #                     172.17.0.1:4566, started once for the machine.
 #     Mattermost   -> Slack (the stub's /slack shim relays chat.postMessage)
 #     stubs :8081  -> New Relic and GA APIs, Slack shim, chaos /control
-#     stubs :8080  -> the storefront (Playwright checkout journey + pings)
+#     stubs :8080  -> the storefront (Playwright checkout journey and the canary sweep)
 #     feeder       -> publishes CloudWatch datapoints once a minute
 #     included     -> otel-collector, Prometheus, Grafana, Redis from
 #                     ../observability/docker-compose.yml
@@ -32,9 +31,9 @@ services:
     mattermost:
         image: mattermost/mattermost-preview:11.10.1
         ports:
-            # 127.0.0.1, not 0.0.0.0: the shared dev-services Mattermost binds
-            # 172.17.0.1:8065, and a 0.0.0.0 bind covers that address too, so
-            # the two could not run at once. Loopback keeps them side by side.
+            # 127.0.0.1, not 0.0.0.0: another Mattermost on this machine may
+            # bind 172.17.0.1:8065, and a 0.0.0.0 bind covers that address too,
+            # so the two could not run at once. Loopback keeps them side by side.
             # This one stays HealthBot's own, and the stub container bootstraps it
             # with specific credentials and a ~town-square channel.
             - "127.0.0.1:8065:8065"
@@ -64,7 +63,7 @@ services:
             # run the bot's own feed command rather than a copy of it.
             context: ../..
             dockerfile: IT/local/feeder/Dockerfile
-        # MiniStack is the shared workstation emulator on the docker bridge,
+        # The AWS emulator is on the docker bridge address,
         # which is local_env's own default, so no endpoint is set here.
         # It publishes nothing and listens on nothing.
         environment:

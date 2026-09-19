@@ -75,17 +75,21 @@ service_names:
     - timer
     - service
 
-# Rendered into /etc/healthbot.env by the template task. These are example
-# values: a deployment overrides every one of them in its own inventory.
-# HB_TAG_NAME and HB_ENVIRONMENT select the EC2 fleet by tag, HB_DB_IDENTIFIER
-# names the RDS cluster, and HB_SECRETS_NAME is the Secrets Manager entry the
-# run credentials come from.
+# Rendered into /etc/healthbot.env by the template task, and read by the
+# systemd unit. Every key here is a setting the bot actually reads.
+#
+# Which EC2 fleet, which RDS cluster and which Secrets Manager entry a run
+# uses are NOT here. They live in Parameter Store under the prefix in
+# site.yml, so the deploy cannot disagree with them. HB_TAG_NAME,
+# HB_DB_IDENTIFIER, HB_SECRETS_NAME and HB_AWS_PROFILE used to sit in this
+# file, were read by nothing, and gave an operator four knobs that turned.
 healthbot_env:
-    HB_TAG_NAME: "EXAMPLE-WEB"
+    # Stamped on telemetry as deployment.environment. It does not select the
+    # fleet; the environment tag comes from Parameter Store.
     HB_ENVIRONMENT: "Production"
-    HB_DB_IDENTIFIER: "example-rds-cluster"
-    HB_SECRETS_NAME: "healthbot-example-secret"
-    HB_AWS_PROFILE: "default"
+    # How much the run says on the console, and so in journald. INFO keeps a
+    # healthy run quiet; the log file keeps everything either way.
+    HB_LOG_LEVEL: "INFO"
     # systemd's LogsDirectory=healthbot creates this and owns it to the
     # service account. Without it the app writes inside its own site-packages.
     HB_LOG_DIR: "/var/log/healthbot"

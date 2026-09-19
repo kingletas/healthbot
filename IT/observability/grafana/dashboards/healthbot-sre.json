@@ -318,7 +318,7 @@
       "id": 8
     },
     {
-      "title": "Canary probes by status code",
+      "title": "Canary URLs by status code",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -340,7 +340,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (url, status_code) (rate(healthbot_probe_http_status_total{status_code!=\"200\"}[5m])) * 60",
+          "expr": "sum by (url, status_code) (rate(healthbot_canary_http_status_total{status_code!=\"200\"}[5m])) * 60",
           "legendFormat": "{{url}} \u2192 {{status_code}}",
           "refId": "A"
         }

@@ -580,7 +580,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (url, status_code) (healthbot_probe_http_status_total{status_code!=\"200\"})",
+                    "expr": "sum by (url, status_code) (healthbot_canary_http_status_total{status_code!=\"200\"})",
                     "refId": "A",
                     "instant": true,
                     "range": false,

@@ -50,9 +50,9 @@ class GaCheck:
         Active users on the property right now, or None when it could not be read.
 
         None is the "cannot tell" signal the rest of the bot already
-        understands: can_notify alerts on it and the SLO scores it bad. It is
+        understands: the alert fires on it and the SLO scores it bad. It is
         returned rather than raised so a Google outage costs this one metric
-        instead of the whole run, which is how the New Relic and ping checks
+        instead of the whole run, which is how the New Relic and canary checks
         already behave.
         """
         if not property_id:

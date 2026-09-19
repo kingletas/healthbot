@@ -1,5 +1,6 @@
 """The file sink is a convenience. It never decides whether the run happens."""
 
+import re
 from pathlib import Path
 
 from healthbot import logs
@@ -32,3 +33,31 @@ def test_a_writable_directory_still_gets_its_file(monkeypatch, tmp_path):
     assert sink is not None
     assert Path(sink).parent.is_dir()
     logs.logger.remove()
+
+
+def test_the_log_filename_is_a_date_a_person_can_read(monkeypatch, tmp_path):
+    # loguru reads DDDD as the day of the year, so healthbot_2111326.log was
+    # 22 November 2021 written as seven digits.
+    monkeypatch.setenv("HB_LOG_DIR", str(tmp_path / "logs"))
+    sink = logs.add_file_sink()
+    logs.logger.info("a line, so the file exists")
+    logs.logger.remove()
+
+    written = next((tmp_path / "logs").iterdir()).name
+    assert re.fullmatch(r"healthbot_\d{4}-\d{2}-\d{2}\.log", written), written
+    assert sink is not None
+
+
+def test_an_unknown_log_level_falls_back_to_info_and_says_so(monkeypatch, capsys):
+    monkeypatch.setenv("HB_LOG_LEVEL", "CHATTY")
+
+    assert logs.console_level() == "INFO"
+    assert "is not a log level" in capsys.readouterr().err
+
+
+def test_the_console_level_is_info_unless_asked(monkeypatch):
+    monkeypatch.delenv("HB_LOG_LEVEL", raising=False)
+    assert logs.console_level() == "INFO"
+
+    monkeypatch.setenv("HB_LOG_LEVEL", "debug")
+    assert logs.console_level() == "DEBUG"

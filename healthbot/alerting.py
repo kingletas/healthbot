@@ -1,7 +1,7 @@
 """
 How often a standing alert is allowed to speak.
 
-can_notify decides whether this run is bad. It says nothing about whether
+failing_signals decides what is bad this run. It says nothing about whether
 anybody needs telling again, so an outage that lasts an afternoon sent the
 same message every five minutes on Slack, SMS and SNS, around fifty of them,
 unread after the fifth. The burn-rate rules in IT/observability already
@@ -25,6 +25,8 @@ Three rules, and the second and third are what make the first safe:
 
 # Standard library imports
 import time
+from collections.abc import Callable
+from typing import NamedTuple
 
 from healthbot.cache import Cache
 
@@ -50,16 +52,89 @@ RECOVERY_RUNS: int = 2
 # forgotten incident cannot suppress a real one months later.
 STATE_TTL_MINUTES: int = 60 * 24 * 7
 
-# What "bad" means, one entry per signal. A tuple of names beside a chain of
-# branches can drift: a name listed with no branch behind it never fails and
-# nothing says so. One table cannot.
-IS_FAILING = {
-    "is_checkout_up": lambda value, limits: value is False,
-    "ping_ok": lambda value, limits: not value,
-    "ga_active_users": lambda value, limits: value >= limits["alert_limit"],
-    "app_response_time": lambda value, limits: float(value) >= limits["app_response_alert"],
-    "web_response_time": lambda value, limits: float(value) >= limits["web_response_alert"],
+# What a failing signal's name carries when the check collected nothing at all.
+UNCOLLECTED_SUFFIX: str = ":uncollected"
+
+
+class Signal(NamedTuple):
+    """One thing that can page, and the words a reader gets told about it."""
+
+    label: str
+    unit: str
+    limit_key: str | None
+    failure: str
+    is_failing: Callable
+
+    def describe(self, value, thresholds: dict) -> str:
+        """One line a person can act on: what is wrong, and what the limit was."""
+        if value is None:
+            return f"{self.label} couldn't be collected"
+        if self.limit_key is None:
+            return self.failure
+        limit = thresholds.get(self.limit_key)
+        return f"{self.label}: {value}{self.unit}, limit {limit}{self.unit}"
+
+
+# What "bad" means, one entry per signal, beside the words a person reads for
+# it. A tuple of names next to a chain of branches can drift: a name listed
+# with no branch behind it never fails and nothing says so. One table cannot,
+# and it is what makes the gate and the alert agree on what is wrong.
+SIGNALS: dict = {
+    "is_checkout_up": Signal(
+        "Checkout",
+        "",
+        None,
+        "Checkout didn't complete",
+        lambda value, limits: value is False,
+    ),
+    "canary_ok": Signal(
+        "Canary URLs",
+        "",
+        None,
+        "A canary URL didn't answer 200",
+        lambda value, limits: not value,
+    ),
+    "ga_active_users": Signal(
+        "Active users",
+        "",
+        "active_users_alert",
+        "",
+        lambda value, limits: value >= limits["active_users_alert"],
+    ),
+    "app_response_time": Signal(
+        "App response time",
+        "ms",
+        "app_response_alert",
+        "",
+        lambda value, limits: float(value) >= limits["app_response_alert"],
+    ),
+    "web_response_time": Signal(
+        "Web response time",
+        "s",
+        "web_response_alert",
+        "",
+        lambda value, limits: float(value) >= limits["web_response_alert"],
+    ),
 }
+
+
+def describe_failing(failing: tuple, message_data: dict, thresholds: dict) -> list:
+    """
+    Each failing signal as a line a person can act on, in the order given.
+
+    The run already works out exactly why it is paging. This is what carries
+    that into the message instead of leaving the reader to compare a table of
+    numbers against a threshold file by eye.
+    """
+    lines = []
+    for name in failing:
+        signal_name = name.removesuffix(UNCOLLECTED_SUFFIX)
+        signal = SIGNALS.get(signal_name)
+        if signal is None:
+            continue
+        value = None if name.endswith(UNCOLLECTED_SUFFIX) else message_data.get(signal_name)
+        lines.append(signal.describe(value, thresholds))
+    return lines
 
 
 def failing_signals(message_data: dict, thresholds: dict) -> tuple:
@@ -67,17 +142,17 @@ def failing_signals(message_data: dict, thresholds: dict) -> tuple:
     Which signals are bad this run, as a stable sorted tuple.
 
     A signal that could not be collected counts as failing under its own name,
-    the same rule can_notify applies, and it means a New Relic outage and a
+    which is the project's rule everywhere, and it means a New Relic outage and a
     genuinely slow site are different conditions, so one does not suppress the
     other's first alert.
     """
     failing = []
 
-    for name, is_failing in IS_FAILING.items():
+    for name, signal in SIGNALS.items():
         value = message_data.get(name)
         if value is None:
-            failing.append(f"{name}:uncollected")
-        elif is_failing(value, thresholds):
+            failing.append(f"{name}{UNCOLLECTED_SUFFIX}")
+        elif signal.is_failing(value, thresholds):
             failing.append(name)
 
     return tuple(sorted(failing))

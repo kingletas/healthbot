@@ -383,10 +383,8 @@ created:
 ```yaml
 healthbot_env:
     HB_PARAM_PREFIX: "/healthbot-production-sm/manager/"
-    HB_TAG_NAME: "web"
     HB_ENVIRONMENT: "production"
-    HB_DB_IDENTIFIER: "your-aurora-cluster"
-    HB_SECRETS_NAME: "healthbot-production-sm-example"
+    HB_LOG_LEVEL: "INFO"
     HB_LOG_DIR: "/var/log/healthbot"
     PLAYWRIGHT_BROWSERS_PATH: "/opt/ms-playwright"
     HB_OTEL_ENABLED: "0"
@@ -394,9 +392,12 @@ healthbot_env:
 
 `HB_PARAM_PREFIX` is the one to get exactly right: it is the Parameter Store
 path the run reads its four settings from, and Terraform derives it from your
-`name` and `environment`. `HB_SECRETS_NAME` carries a random five-character
-suffix that Terraform generates, so take the real value from the `apply` output
-or the Secrets Manager console rather than typing it from the pattern.
+`name` and `environment`.
+
+Which EC2 fleet, which RDS cluster and which secret the run uses are not in this
+file. They are the four parameters under that prefix, which Terraform wrote, so
+the deploy cannot disagree with them. Change a fleet by changing the parameter,
+not the host.
 
 Install the collections the playbook uses, then deploy:
 
@@ -425,15 +426,16 @@ so an override is usually the top few values:
 
 ```yaml
 base_url: https://your-store.example/
-product_url: some-product-page.html
 search_term: "something your search finds"
-ping_urls:
+canary_urls:
     - checkout
     - checkout/cart
 ```
 
-The thresholds below those, `alert_limit`, `app_response_alert` and
-`web_response_alert`, decide when a run is worth waking somebody for. Start with
+The thresholds below those decide when a run is worth waking somebody for.
+Each is an upper bound and they do not share a unit: `active_users_alert` is a
+count of realtime users, `app_response_alert` is milliseconds and
+`web_response_alert` is seconds. Start with
 the shipped numbers, watch for a couple of weeks, then move them once you know
 what normal looks like on your own store. A threshold that fires when nothing is
 wrong is worse than no threshold, because it teaches everybody to ignore the

@@ -3,7 +3,7 @@
 [![CI](https://github.com/kingletas/healthbot/actions/workflows/ci.yml/badge.svg)](https://github.com/kingletas/healthbot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-HealthBot is a Python SRE bot that probes the storefront from the outside, through New Relic, AWS CloudWatch, Google Analytics, a real-browser checkout journey and a canary URL sweep. It evaluates the results against declared SLOs, emits OpenTelemetry, and notifies through Slack, SMS and SNS. It ships its own infrastructure: Terraform, Packer and Ansible under `IT/`, a local observability stack under `IT/observability/`, and a full local environment under `IT/local/` (Mattermost, API stubs, and the shared MiniStack playing AWS) in which the production bot runs end to end.
+HealthBot is a Python SRE bot that probes the storefront from the outside, through New Relic, AWS CloudWatch, Google Analytics, a real-browser checkout journey and a canary URL sweep. It evaluates the results against declared SLOs, emits OpenTelemetry, and notifies through Slack, SMS and SNS. It ships its own infrastructure: Terraform, Packer and Ansible under `IT/`, a local observability stack under `IT/observability/`, and a full local environment under `IT/local/` (Mattermost, API stubs, and a shared emulator playing AWS) in which the production bot runs end to end.
 
 **New here? [docs/from-nothing.md](docs/from-nothing.md) gets you from a clone to a real alert in about twenty minutes, with no AWS account, no credentials, and no storefront of your own.**
 
@@ -22,13 +22,13 @@ make up seed    # the local environment, and the data a run expects to find
 
 | Check | Source | Feeds |
 |---|---|---|
-| `checks/site.py` | Headless Chromium (Playwright): search → product → add to cart → checkout page. A failure leaves a screenshot, the page HTML and a replayable trace under `logs/` | `is_checkout_up` |
-| `checks/pings.py` | Async sweep of the base URL + `ping_urls` from `site.yml`; a connection failure folds in as status 0 instead of aborting the run | `ping_ok` |
+| `checks/site.py` | Headless Chromium (Playwright): search → product → add to cart → checkout page. A failure leaves a screenshot, the page HTML and a replayable trace in `HB_LOG_DIR` | `is_checkout_up` |
+| `checks/canary.py` | Async sweep of the base URL + `canary_urls` from `site.yml`; a connection failure folds in as status 0 instead of aborting the run | `canary_ok` |
 | `checks/nr.py` | New Relic APM + browser summaries | `app_*`/`web_*` metrics |
 | `checks/ga.py` | GA4 realtime active users, through the Data API's `runRealtimeReport`, service account via google-auth. A property that cannot be read is `None`, which alerts rather than passing | `ga_active_users` |
 | `checks/aws.py` | CloudWatch metrics for the tagged EC2 fleet + RDS cluster (newest datapoint, UTC window) | `aws_metrics` |
 
-Alert thresholds live in `healthbot/config/site.yml`, currently `alert_limit: 700` active users, `app_response_alert: 800` ms and `web_response_alert: 3.5` s. A signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
+Alert thresholds live in `healthbot/config/site.yml`, currently `active_users_alert: 700` realtime users, `app_response_alert: 800` ms and `web_response_alert: 3.5` s. Each is an upper bound, and they do not share a unit, so each one states its own. `HB_LOG_DIR` is where the run log and the failed-checkout evidence go; unset, it is `~/.local/state/healthbot/logs`. A signal that couldn't be collected triggers the alert rather than passing silently. A run that crashes exits non-zero (`Type=oneshot` in the systemd unit records it) and charges only the monitor SLO, never the site's.
 
 A standing alert backs off rather than repeating: 15 minutes, then 30, then hourly, so an outage lasting an afternoon doesn't send fifty identical messages. A change in *what* is failing always speaks immediately, recovery needs two consecutive clean runs before it counts, and a gate that can't read its own state sends rather than suppressing.
 
@@ -43,7 +43,7 @@ healthbot/
   alerting.py        whether a bad run is worth telling anybody about again
   slo.py  telemetry.py  dora.py  demo.py  local_env.py
   aws/               client.py · parameter_store.py · secrets_manager.py
-  checks/            site.py · pings.py · nr.py · ga.py · aws.py
+  checks/            site.py · canary.py · nr.py · ga.py · aws.py
   notifications/     base.py · manager.py · slack.py · sns.py · twilio.py
   config/            the shipped YAML: site, slo, cookies, headers, messages
 IT/
@@ -59,11 +59,11 @@ Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5
 
 DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR.
 
-The full local stack (OTel Collector → Prometheus with its rules → Grafana with two provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
+The full local stack (OTel Collector → Prometheus with its rules → Grafana with its provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
 
 ## Running it locally, for real
 
-`IT/local/` extends the observability stack into a complete local environment: MiniStack plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS) from the shared `dev-services` stack, Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
+`IT/local/` extends the observability stack into a complete local environment: a shared LocalStack-compatible emulator plays AWS (SSM, Secrets Manager, EC2, CloudWatch, SNS), Mattermost plays Slack, and a stub container plays New Relic, Google Analytics and the storefront, so the production `main()` runs end to end on a laptop, checkout journey and alert delivery included.
 
 ```bash
 cd IT/local && docker compose up -d --build
@@ -71,7 +71,7 @@ uv run healthbot-local seed
 uv run healthbot-local run-env      # prints the fully-wired run command
 ```
 
-Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos switches on the stub (`POST :8081/control`) stage outages on demand. The integration suite runs the whole loop: `uv run pytest -m integration` (nine tests, auto-skipped when the stack is down). See `IT/local/README.md` for the seams and the gotchas.
+Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos switches on the stub (`POST :8081/control`) stage outages on demand. The integration suite runs the whole loop: `uv run pytest -m integration`, auto-skipped when the stack is down. See `IT/local/README.md` for the seams and the gotchas.
 
 ## Runtime configuration
 

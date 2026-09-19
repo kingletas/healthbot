@@ -36,8 +36,8 @@ check_duration = _meter.create_histogram(
 check_result = _meter.create_counter(
     "healthbot.check.result", description="Check outcomes by status (pass/fail/error)"
 )
-probe_status = _meter.create_counter(
-    "healthbot.probe.http.status", description="Canary URL responses by status code"
+canary_status = _meter.create_counter(
+    "healthbot.canary.http.status", description="Canary URL responses by status code"
 )
 heartbeat = _meter.create_counter(
     "healthbot.heartbeat", description="Dead-man's switch: one tick per completed run"
@@ -161,9 +161,9 @@ def check_span(name: str):
             check_result.add(1, {"check": name, "status": state.status})
 
 
-def record_probe_statuses(results: list) -> None:
+def record_canary_statuses(results: list) -> None:
     for url, status in results:
-        probe_status.add(1, {"url": url, "status_code": str(status)})
+        canary_status.add(1, {"url": url, "status_code": str(status)})
 
 
 def record_business_metrics(message_data: dict) -> None:

@@ -5,17 +5,17 @@ Every non-AWS dependency of a HealthBot run, in one process:
 
     :8080  a fake storefront that satisfies checks/site.py's Playwright
            journey (search -> product -> add to cart -> checkout) and
-           answers every ping URL
+           answers every canary URL
     :8081  /nr/...     the New Relic v2 API subset checks/nr.py calls
            /ga/...     GA discovery document, token endpoint and the
                        GA4 runRealtimeReport endpoint checks/ga.py calls
            /slack/...  a chat.postMessage shim that relays the bot's real
                        Slack blocks into Mattermost
-           /control    chaos switches (checkout_down, pings_down, ga_surge,
+           /control    chaos switches (checkout_down, canary_down, ga_surge,
                        nr_slow) so alerts can be staged on purpose
            /health     liveness for healthbot-local status
 
-AWS itself is MiniStack's job, not this file's. Runs only inside the
+AWS itself is the emulator's job, not this file's. Runs only inside the
 IT/local compose stack; nothing here is deployable.
 """
 
@@ -42,7 +42,7 @@ MM_TEAM = "sre"
 # Chaos switches, togglable at runtime through /control
 STATE = {
     "checkout_down": False,
-    "pings_down": False,
+    "canary_down": False,
     "ga_surge": False,
     "nr_slow": False,
 }
@@ -141,8 +141,8 @@ async def store_checkout(request: web.Request) -> web.Response:
 
 
 async def store_any(request: web.Request) -> web.Response:
-    # Every other path is a ping target; checks/pings.py wants a flat 200.
-    if STATE["pings_down"]:
+    # Every other path is a canary target; checks/canary.py wants a flat 200.
+    if STATE["canary_down"]:
         raise web.HTTPServiceUnavailable(text="staged outage")
     # escape(): the path is attacker-controlled even here, and reflecting
     # it raw made this stub a working XSS demo rather than a storefront.
@@ -323,10 +323,15 @@ async def slack_post_message(request: web.Request) -> web.Response:
     raw_blocks = payload.get("blocks", "")
     # A JSON body arrives already parsed; a form body arrives as a string.
     blocks = parse_blocks(raw_blocks) if isinstance(raw_blocks, str) else raw_blocks
+    text = payload.get("text") or ""
     if blocks:
-        message = blocks_to_markdown(blocks)
+        # The text field goes first and is labelled, because it is the only
+        # part a locked phone and a screen reader get. The relay used to drop
+        # it, so the one string worth proving locally was the one thrown away.
+        body = blocks_to_markdown(blocks)
+        message = f"_on a phone:_ {text}\n\n{body}" if text else body
     else:
-        message = payload.get("text") or "(empty HealthBot message)"
+        message = text or "(empty HealthBot message)"
 
     delivered = await post_to_mattermost(message)
     if not delivered:

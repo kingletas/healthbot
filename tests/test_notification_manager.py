@@ -1,48 +1,54 @@
 #!/usr/bin/env python3
 
 import healthbot.notifications.manager as nm
+from healthbot.alerting import failing_signals
 
-THRESHOLDS = {"alert_limit": 700, "web_response_alert": 3.5, "app_response_alert": 800}
+THRESHOLDS = {"active_users_alert": 700, "web_response_alert": 3.5, "app_response_alert": 800}
 
 HEALTHY = {
     "is_checkout_up": True,
+    "canary_ok": True,
     "ga_active_users": 100,
     "app_response_time": 400.0,
     "web_response_time": 2.0,
 }
 
 
-def _patch_thresholds(monkeypatch):
-    monkeypatch.setattr(nm, "alert_thresholds", lambda: THRESHOLDS)
+def _bad(message_data: dict) -> bool:
+    """What the run asks: is anything about this run worth telling somebody."""
+    return bool(failing_signals(message_data, THRESHOLDS))
 
 
-def test_healthy_run_does_not_notify(monkeypatch):
-    _patch_thresholds(monkeypatch)
-    assert nm.can_notify(HEALTHY) is False
+def test_healthy_run_does_not_notify():
+    assert _bad(HEALTHY) is False
 
 
-def test_checkout_down_notifies(monkeypatch):
-    _patch_thresholds(monkeypatch)
-    assert nm.can_notify({**HEALTHY, "is_checkout_up": False}) is True
+def test_checkout_down_notifies():
+    assert _bad({**HEALTHY, "is_checkout_up": False}) is True
 
 
-def test_each_threshold_breach_notifies(monkeypatch):
-    _patch_thresholds(monkeypatch)
-    assert nm.can_notify({**HEALTHY, "ga_active_users": 700}) is True
-    assert nm.can_notify({**HEALTHY, "app_response_time": 800.0}) is True
-    assert nm.can_notify({**HEALTHY, "web_response_time": 3.5}) is True
+def test_a_failing_canary_sweep_notifies():
+    # Regression: the alert decision used to be a second chain of branches
+    # with no branch for the canary sweep, so every URL could 503 while the
+    # objective burned and nobody was told.
+    assert _bad({**HEALTHY, "canary_ok": False}) is True
 
 
-def test_missing_signal_notifies_instead_of_crashing(monkeypatch):
+def test_each_threshold_breach_notifies():
+    assert _bad({**HEALTHY, "ga_active_users": 700}) is True
+    assert _bad({**HEALTHY, "app_response_time": 800.0}) is True
+    assert _bad({**HEALTHY, "web_response_time": 3.5}) is True
+
+
+def test_missing_signal_notifies_instead_of_crashing():
     # Regression: float(None) used to raise TypeError inside the alert
-    # function itself, and a missing key meant the check silently passed.
-    _patch_thresholds(monkeypatch)
-    for key in ("ga_active_users", "app_response_time", "web_response_time"):
+    # decision, and a missing key meant the check silently passed.
+    for key in ("ga_active_users", "app_response_time", "web_response_time", "canary_ok"):
         broken = dict(HEALTHY)
         broken[key] = None
-        assert nm.can_notify(broken) is True
+        assert _bad(broken) is True
         del broken[key]
-        assert nm.can_notify(broken) is True
+        assert _bad(broken) is True
 
 
 def test_sns_subject_is_read_from_the_right_key(monkeypatch):

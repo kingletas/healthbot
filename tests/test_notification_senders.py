@@ -6,10 +6,13 @@ import pytest
 
 import healthbot.notifications.slack as slack_mod
 import healthbot.notifications.twilio as twilio_mod
+from healthbot.alerting import describe_failing, failing_signals
 from healthbot.logs import logger
 from healthbot.notifications.slack import SlackMessage
 from healthbot.notifications.sns import SnsMessage, SnsNotifier
 from healthbot.notifications.twilio import TwilioMessage
+
+THRESHOLDS = {"active_users_alert": 700, "web_response_alert": 3.5, "app_response_alert": 800}
 
 
 def test_slack_message_renders_the_template():
@@ -20,7 +23,7 @@ def test_slack_message_renders_the_template():
             "app_response_time": 400,
             "web_response_time": 2.0,
             "is_checkout_up": True,
-            "ping_ok": True,
+            "canary_ok": True,
             "aws_metrics": {},
         },
         channel="#alerts",
@@ -55,7 +58,7 @@ def test_slack_message_is_valid_json(extra):
             "app_response_time": 400,
             "web_response_time": 2.0,
             "is_checkout_up": True,
-            "ping_ok": True,
+            "canary_ok": True,
             **extra,
         },
         channel="#alerts",
@@ -72,7 +75,7 @@ def test_slack_message_omits_the_logo_when_none_is_configured():
         "app_response_time": 400,
         "web_response_time": 2.0,
         "is_checkout_up": True,
-        "ping_ok": True,
+        "canary_ok": True,
         "aws_metrics": {},
     }
 
@@ -100,7 +103,7 @@ def test_a_metric_that_could_not_be_collected_says_so(monkeypatch):
         message_data={
             "header": "h",
             "is_checkout_up": True,
-            "ping_ok": True,
+            "canary_ok": True,
             "aws_metrics": {},
         },
         channel="#c",
@@ -116,7 +119,7 @@ def test_metric_classes_become_one_section_each():
         message_data={
             "header": "h",
             "is_checkout_up": True,
-            "ping_ok": True,
+            "canary_ok": True,
             "aws_metrics": {"rds": {"CPUUtilization": 27.0}, "ec2": {"CPUUtilization": 19.0}},
         },
         channel="#c",
@@ -124,7 +127,7 @@ def test_metric_classes_become_one_section_each():
 
     blocks = json.loads(message.message)
     headings = [b["text"]["text"] for b in blocks[4:]]
-    assert headings == ["*RDS*:", "*EC2*:"]
+    assert headings == ["*rds*", "*ec2*"]
     assert blocks[4]["fields"] == [
         {"type": "mrkdwn", "text": "CPUUtilization"},
         {"type": "mrkdwn", "text": "*27.0*"},
@@ -216,15 +219,80 @@ def test_sns_sender_publishes_with_subject():
 def test_the_alert_carries_a_text_fallback_for_push_and_screen_readers():
     # Blocks alone arrive on a locked phone as the bot's name and nothing
     # else. Slack warns about this; an alerting tool cannot afford it.
-    healthy = {"header": "HealthBot", "is_checkout_up": True, "ping_ok": True, "aws_metrics": {}}
+    healthy = {"header": "HealthBot", "is_checkout_up": True, "canary_ok": True, "aws_metrics": {}}
 
     up = SlackMessage(message_data=healthy, channel="#c")
-    assert up.text == "HealthBot: all checks passed"
+    assert up.text == "HealthBot: nothing is failing"
 
-    down = SlackMessage(message_data={**healthy, "is_checkout_up": False}, channel="#c")
-    assert down.text == "HealthBot: checkout failing"
-
-    both = SlackMessage(
-        message_data={**healthy, "is_checkout_up": False, "ping_ok": False}, channel="#c"
+    down = SlackMessage(
+        message_data={**healthy, "is_checkout_up": False},
+        channel="#c",
+        failing_lines=["Checkout didn't complete"],
     )
-    assert both.text == "HealthBot: checkout, canary URLs failing"
+    assert down.text == "HealthBot: Checkout didn't complete"
+
+
+def test_a_latency_page_never_says_the_checks_passed():
+    # The push line used to look at checkout and the canary sweep only, so a
+    # run paging on response time arrived on a locked phone reading
+    # "all checks passed".
+    slow = {
+        "header": "HealthBot",
+        "is_checkout_up": True,
+        "canary_ok": True,
+        "aws_metrics": {},
+        "app_response_time": 2300.0,
+    }
+    failing = failing_signals(slow, THRESHOLDS)
+    message = SlackMessage(
+        message_data=slow,
+        channel="#c",
+        failing_lines=describe_failing(failing, slow, THRESHOLDS),
+    )
+
+    assert "passed" not in message.text
+    assert "App response time: 2300.0ms, limit 800ms" in message.text
+
+
+def test_the_alert_says_why_it_fired_with_the_limit_beside_the_value():
+    slow = {
+        "header": "HealthBot",
+        "is_checkout_up": True,
+        "canary_ok": True,
+        "aws_metrics": {},
+        "web_response_time": 6.2,
+    }
+    failing = failing_signals(slow, THRESHOLDS)
+    message = SlackMessage(
+        message_data=slow,
+        channel="#c",
+        failing_lines=describe_failing(failing, slow, THRESHOLDS),
+    )
+
+    why = [b for b in json.loads(message.message) if "Why this alert fired" in str(b)]
+    assert len(why) == 1
+    assert "Web response time: 6.2s, limit 3.5s" in why[0]["text"]["text"]
+
+
+def test_an_uncollected_signal_says_so_rather_than_naming_a_number():
+    blind = {"header": "HealthBot", "is_checkout_up": True, "canary_ok": True, "aws_metrics": {}}
+    failing = failing_signals(blind, THRESHOLDS)
+    lines = describe_failing(failing, blind, THRESHOLDS)
+
+    assert "App response time couldn't be collected" in lines
+
+
+def test_an_untagged_instance_is_headed_by_its_id_not_a_sentence():
+    message = SlackMessage(
+        message_data={
+            "header": "h",
+            "is_checkout_up": True,
+            "canary_ok": True,
+            "aws_metrics": {"i-0abc": {"CPUUtilization": 19.0}, "RDS": {"Deadlocks": 0.0}},
+            "metric_labels": {"i-0abc": "i-0abc", "RDS": "RDS Stats"},
+        },
+        channel="#c",
+    )
+
+    headings = [b["text"]["text"] for b in json.loads(message.message)[4:]]
+    assert headings == ["*i-0abc*", "*RDS Stats*"]

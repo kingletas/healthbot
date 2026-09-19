@@ -18,7 +18,7 @@ RUN useradd --system --no-create-home feeder
 USER feeder
 
 # Healthy means CloudWatch holds a recent datapoint, not that the process is
-# alive: a feeder that has lost MiniStack is the failure that matters.
+# alive: a feeder that has lost the AWS emulator is the failure that matters.
 HEALTHCHECK --interval=60s --timeout=10s --start-period=90s \
     CMD ["python", "/usr/local/bin/healthcheck.py"]
 
