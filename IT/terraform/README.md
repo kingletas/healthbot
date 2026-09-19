@@ -16,8 +16,19 @@ If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On 
 
 **What it does not prove:** anything about real AWS. An emulator answers the same API shapes, not the same service. Treat a clean local plan as a reason to try a real one, never as a substitute for it.
 
+## State holds your credentials in plaintext
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+Terraform records every value it manages, and this configuration builds a Secrets Manager secret out of the vendor tokens you pass in. **A state file from this tree is as sensitive as those tokens**, and so is any `.backup` Terraform leaves beside it. Nothing encrypts it for you locally.
+
+Keep state in the S3 backend, which is where `backend.tf` points and where it is encrypted and versioned. A local `terraform.tfstate` only appears when you apply without a backend, which is easy to do by accident on a first run and easy to forget afterwards.
+
+`.gitignore` keeps state out of an ordinary `git add`, and `make tfstate` refuses a forced one, in CI as well as on your machine. **Neither reaches a copy already sitting on your disk.** If you find one, treat every credential in it as exposed for as long as the file has existed, rotate them, then delete it.
+
+## The generated table below is generated
+
+Everything between the markers is written by `terraform-docs` from `variables.tf` and the resources. Change it with `make tf-docs`, not by hand, and `make check` refuses a table that no longer matches.
+
+<!-- BEGIN_TF_DOCS -->
 Good ways to check for security or visualize what's going on
 checkov -d .
 terraform graph -type=plan | dot -Tpng -o graph.png
@@ -131,4 +142,4 @@ No modules.
 | Name | Description |
 | ---- | ----------- |
 | <a name="output_ec2-healthbot-instance"></a> [ec2-healthbot-instance](#output\_ec2-healthbot-instance) | n/a |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

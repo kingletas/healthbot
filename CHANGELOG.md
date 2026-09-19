@@ -16,6 +16,12 @@ first release's notes.
   every data source resolves. **It does not prove anything about real AWS** —
   the plan is against an emulator, and that difference is real.
 
+- **A plain statement that the machine image is not scanned.** `SECURITY.md`
+  and Step 5 of `docs/on-aws.md` now say that nothing in this repository runs a
+  vulnerability scanner over the AMI and that no software bill of materials is
+  produced, so you can decide for yourself whether to scan it before you boot
+  it. The build has not changed. What changed is that you no longer have to
+  assume something is already checking the image.
 - **A guide for deploying on AWS.** `docs/on-aws.md` takes you from an empty
   account to a systemd timer running the bot every five minutes: the tools, what
   has to exist in the account first, the credentials to collect, then Packer,
@@ -42,6 +48,39 @@ first release's notes.
   credentials.
 
 ### Changed
+
+- **`make check` refuses a tracked Terraform state file, and the repository says
+  why that matters.** State records every value Terraform manages in plaintext,
+  and this configuration builds a Secrets Manager secret out of your vendor
+  tokens, so a state file from this tree is as sensitive as the tokens in it.
+  `.gitignore` has always kept state out of an ordinary `git add`; `make
+  tfstate` now refuses a forced one, in CI as well as locally. `SECURITY.md` and
+  `IT/terraform/README.md` say what to do about a local copy you find, which is
+  to rotate what is in it rather than to quietly delete the file.
+
+- **The repository no longer declares checks that nobody runs.**
+  `.pre-commit-config.yaml` listed sixteen hooks and not one had ever run: no
+  hook was installed, so the file described work nothing performed. Five of the
+  sixteen duplicated `make check`, one ran tfsec, which this project had already
+  dropped for being set to never fail, seven were whitespace and file hygiene,
+  two were Terraform static analysis nothing here invoked, and one,
+  `terraform_docs`, was the only thing keeping the generated table in
+  `IT/terraform/README.md` current. That is why the table sat four years stale,
+  advertising a variable that no longer exists. Both the config and the
+  `.pre-commit-hooks.yaml` beside it are gone, and `pre-commit` has left the dev
+  group with it, so `uv sync` installs seven fewer packages.
+
+- **`make check` runs the two checks that were worth keeping.** `terraform-docs`
+  now verifies the generated table and fails when it no longer matches
+  `variables.tf`, with `make tf-docs` to regenerate it. `shellcheck` runs over
+  every tracked file whose shebang says it is shell, which is four scripts that
+  nothing was reading before. CI installs `terraform-docs` pinned to a version
+  and a checksum, because the check compares generated output byte for byte.
+
+- **`CONTRIBUTING.md` describes what actually happens on a commit.** It said
+  `make check` was what the pre-commit hook ran. Nothing ran. It now says the
+  repository installs no hook, shows you how to wire one that calls the gate,
+  and names the four tools the gate needs on your `PATH`.
 
 - **Both CloudWatch alarms are named after the deployment, not the instance.**
   They were `awsec2-<instance-id>-status-check` and

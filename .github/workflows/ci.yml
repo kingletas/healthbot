@@ -37,6 +37,21 @@ jobs:
       - name: Install Packer
         uses: hashicorp/setup-packer@v3
 
+      # Pinned to a version and its checksum: the gate compares the generated
+      # table byte for byte, so another build could fail on its own output.
+      - name: Install terraform-docs
+        env:
+          TFDOCS_VERSION: "0.24.0"
+          TFDOCS_SHA256: "9005daf969de0b50134493a2c00078b49f5f5b39d021cda7c89bf4d4f3d776d3"
+        run: |
+          tarball="terraform-docs-v${TFDOCS_VERSION}-linux-amd64.tar.gz"
+          curl -fsSL -o "$tarball" \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${TFDOCS_VERSION}/${tarball}"
+          echo "${TFDOCS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" terraform-docs
+          sudo install -m 0755 terraform-docs /usr/local/bin/terraform-docs
+          rm -f "$tarball" terraform-docs
+
       - name: Build the environment
         run: make install
 
