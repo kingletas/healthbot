@@ -90,6 +90,15 @@ first release's notes.
   re-reads the type off the first line of the body. It now says
   `text/cloud-config`, so the right handler is chosen rather than guessed.
 
+- **The DORA journal's location is a deploy setting, and the repository says
+  what is at stake.** Set `healthbot_dora_events` in `group_vars/all.yml`. It
+  keeps the old path, so nothing moves unless you move it. The journal is
+  written on whichever machine runs `make deploy`, never on the instance, so
+  replacing the instance does not touch it; what ends the history is losing that
+  path, or two people deploying from two laptops and each keeping half of it.
+  `README.md`, `docs/on-aws.md` and `healthbot/dora.py` now all say so where you
+  would meet the journal.
+
 - **`make check` refuses a tracked Terraform state file, and the repository says
   why that matters.** State records every value Terraform manages in plaintext,
   and this configuration builds a Secrets Manager secret out of your vendor

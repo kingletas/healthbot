@@ -417,6 +417,13 @@ minutes, with up to a minute of jitter.
 
 Run it a second time. A correct run reports `changed=0`.
 
+The deploy also appends one line to the DORA journal, on the machine you ran
+`make deploy` from rather than on the instance. That file is the whole deploy
+history and nothing rebuilds it, so replacing the instance costs you nothing
+and losing that path costs you everything. Set `healthbot_dora_events` in
+`group_vars/all.yml` to somewhere shared and backed up if more than one person
+deploys, or the history splits quietly between their home directories.
+
 ## Step 9: point it at your store
 
 The shipped `healthbot/config/site.yml` describes `store.example.com`. Rather

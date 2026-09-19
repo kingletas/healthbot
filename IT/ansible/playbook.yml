@@ -187,6 +187,10 @@
             cmd: >-
                 {{ healthbot_dora_command }} record deploy
                 {{ ('--sha ' + healthbot_head.stdout) if healthbot_head.rc == 0 else '' }}
+        # Stated by the deploy rather than inherited from whoever ran it, so
+        # two operators append to one journal instead of two.
+        environment:
+            HB_DORA_EVENTS: "{{ healthbot_dora_events }}"
         delegate_to: localhost
         become: false
         run_once: true

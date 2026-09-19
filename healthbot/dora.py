@@ -11,6 +11,11 @@ The journal lives at HB_DORA_EVENTS (default
 ~/.local/share/healthbot/dora-events.jsonl), deliberately a flat file so a
 deploy can be recorded from the Ansible playbook with one line and no
 service dependency.
+
+It is written on whichever machine runs the deploy, never on the host being
+deployed to, so replacing that host leaves it alone. Nothing rebuilds it and
+nothing else holds the same facts. Back this path up, or point HB_DORA_EVENTS
+at something that is already backed up.
 """
 
 # Standard library imports
