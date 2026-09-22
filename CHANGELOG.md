@@ -2,10 +2,9 @@
 
 Entries say what changed for somebody running HealthBot. The reasoning behind a change is in its commit message. You'll find the detail there, not here.
 
-## Unreleased
+## [0.1.0]: 2026-09-21
 
-Nothing's tagged yet. Everything below has landed on `main` and will be the
-first release's notes.
+The first release.
 
 ### Added
 
