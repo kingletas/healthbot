@@ -28,7 +28,7 @@ from os import makedirs, path
 
 # Local imports
 from healthbot import telemetry
-from healthbot.logs import logger
+from healthbot.logs import add_file_sink, logger
 from healthbot.settings import get_settings
 
 
@@ -146,6 +146,7 @@ def main() -> int:
     exporter.add_argument("--repo", help="git repo for lead time (default HB_DORA_REPO or cwd)")
 
     args = parser.parse_args()
+    add_file_sink()
 
     if args.command == "record":
         event = record_event(args.kind, at=args.at, sha=args.sha, status=args.status)

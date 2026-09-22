@@ -27,7 +27,7 @@ from os import path
 
 # Local imports
 from healthbot import dora, slo, telemetry
-from healthbot.logs import logger
+from healthbot.logs import add_file_sink, logger
 from healthbot.settings import get_settings
 
 DEMO_URLS = [
@@ -171,6 +171,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--repo", default=get_settings().dora_repo)
     args = parser.parse_args()
+    add_file_sink()
 
     if not telemetry.setup_telemetry():
         logger.error(

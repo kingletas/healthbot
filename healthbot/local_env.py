@@ -42,7 +42,7 @@ import rsa
 
 # Local imports
 from healthbot import DEFAULT_ENV_TAG_SUFFIX
-from healthbot.logs import logger
+from healthbot.logs import add_file_sink, logger
 
 AWS_ENDPOINT = environ.get("HB_LOCAL_AWS_ENDPOINT", "http://172.17.0.1:4566")
 API_BASE = environ.get("HB_LOCAL_API_BASE", "http://localhost:8081")
@@ -351,6 +351,7 @@ def main() -> int:
     sub.add_parser("status")
     sub.add_parser("run-env")
     args = parser.parse_args()
+    add_file_sink()
 
     if args.command == "seed":
         return seed()

@@ -52,12 +52,10 @@ def add_file_sink() -> str | None:
     """
     The rotating file sink, or None when its directory cannot be made.
 
-    Importing this module used to create the directory, so a process that
-    could not write there, such as a container running as a system account
-    with no home or a read-only install, died on the import rather than on
-    anything it was asked to do. Logging is never the thing that takes a run down:
-    an unwritable path costs the file, says so on stderr, and the run
-    continues with the console sink it already has.
+    Call it from an entry point and never at import: it creates log_dir, and an
+    importer gets no chance to say where that should be first. Logging is never
+    the thing that takes a run down, so an unwritable path costs the file, says
+    so on stderr, and leaves the console sink the run already has.
     """
     log_d = get_settings().log_dir
     try:
@@ -71,6 +69,3 @@ def add_file_sink() -> str | None:
     log_file = os.path.join(log_d, "healthbot_{time:YYYY-MM-DD}.log")
     logger.add(log_file, retention="7 days", level=FILE_LEVEL, enqueue=True, **TRACEBACK_SETTINGS)
     return log_file
-
-
-log_file = add_file_sink()

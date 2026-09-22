@@ -17,7 +17,7 @@ from healthbot.checks.nr import get_new_relic_data
 from healthbot.checks.site import validate_checkout
 from healthbot.config_files import check_site_config, get_base_url, get_config, get_header
 from healthbot.errors import ConfigurationError
-from healthbot.logs import logger
+from healthbot.logs import add_file_sink, logger
 from healthbot.notifications.manager import alert_thresholds, send_notifications
 from healthbot.settings import get_settings
 
@@ -114,6 +114,10 @@ def main(argv: list | None = None) -> int:
     # credentials, no Redis and no network. This was the onboarding guide's
     # first command and it started a full production run.
     parse_args(argv)
+
+    # After the arguments, for the same reason: --help and --version now answer
+    # without creating a log directory either.
+    add_file_sink()
 
     # This is the outermost boundary and the only place an exception is
     # allowed to die. It must exit non-zero: @logger.catch plus a bare except

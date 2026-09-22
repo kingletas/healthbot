@@ -48,6 +48,28 @@ def test_the_log_filename_is_a_date_a_person_can_read(monkeypatch, tmp_path):
     assert sink is not None
 
 
+def test_every_console_script_installs_the_file_sink():
+    # The sink is no longer installed by importing healthbot.logs, so each entry
+    # point asks for it. A new script that forgets loses its log file in silence.
+    import ast
+    import tomllib
+
+    root = Path(__file__).resolve().parent.parent
+    scripts = tomllib.loads((root / "pyproject.toml").read_text())["project"]["scripts"]
+    assert scripts, "pyproject declares no console scripts to check"
+
+    for script, target in sorted(scripts.items()):
+        module, func_name = target.split(":")
+        source = (root / module.replace(".", "/")).with_suffix(".py").read_text()
+        func = next(
+            node
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.FunctionDef) and node.name == func_name
+        )
+        calls = {ast.unparse(node.func) for node in ast.walk(func) if isinstance(node, ast.Call)}
+        assert "add_file_sink" in calls, f"{script} ({target}) never installs the file sink"
+
+
 def test_the_suite_never_points_at_the_real_log_directory():
     # Without tests/conftest.py this passes only by luck: importing healthbot.logs
     # resolves log_dir, and the default is the directory a real run writes to.

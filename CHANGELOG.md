@@ -2,6 +2,15 @@
 
 Entries say what changed for somebody running HealthBot. The reasoning behind a change is in its commit message. You'll find the detail there, not here.
 
+## [Unreleased]
+
+### Changed
+
+- **The log file is opened when a command runs, not when the package is
+  imported.** `healthbot --help`, `healthbot --version` and anything importing
+  HealthBot as a library no longer create `HB_LOG_DIR` on the way past. Every
+  console script still writes the same file to the same place as before.
+
 ## [0.1.0]: 2026-09-21
 
 The first release.
