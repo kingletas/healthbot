@@ -48,6 +48,14 @@ def test_the_log_filename_is_a_date_a_person_can_read(monkeypatch, tmp_path):
     assert sink is not None
 
 
+def test_the_suite_never_points_at_the_real_log_directory():
+    # Without tests/conftest.py this passes only by luck: importing healthbot.logs
+    # resolves log_dir, and the default is the directory a real run writes to.
+    from healthbot.settings import Settings, get_settings
+
+    assert get_settings().log_dir != Settings.model_fields["log_dir"].default
+
+
 def test_an_unknown_log_level_falls_back_to_info_and_says_so(monkeypatch, capsys):
     monkeypatch.setenv("HB_LOG_LEVEL", "CHATTY")
 
