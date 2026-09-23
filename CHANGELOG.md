@@ -49,6 +49,9 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 - **Vendor tokens are rotated by hand, every 90 days.** `SECURITY.md` and the
   *Day to day* section of `docs/on-aws.md` now say which tokens, how often and
   in what order. There is no rotation function and none is planned.
+- **The three unused AWS provider aliases are gone.** Nothing referenced them,
+  and a plan is unchanged without them. The `profile`, `production_profile` and
+  `region` variables they read are still accepted but no longer used.
 
 ## [0.1.0]: 2026-09-21
 

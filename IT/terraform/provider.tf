@@ -23,18 +23,3 @@ terraform {
 }
 
 provider "aws" {}
-provider "aws" {
-  profile = var.profile
-  region  = var.region
-  alias   = "us_east_2"
-}
-
-provider "aws" {
-  profile = var.production_profile
-  region  = var.region
-  alias   = "aws_production"
-}
-
-provider "aws" {
-  alias = "alternate"
-}
