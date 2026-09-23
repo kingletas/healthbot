@@ -20,6 +20,11 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   community image answers the same health path and then fails the seeding with
   a 501 on the RDS cluster, far from anything naming the emulator. The harness
   now says which emulator it found before it starts.
+- **The Secrets Manager secret comes from the shared module library too.** Its
+  first version is still written once and never overwritten afterwards. A plan
+  moves the secret and its version, changes the secret's `Name` tag to the
+  secret's own name, and keeps its ARN, so the bot reads the same secret
+  throughout. Proved against a local emulator only; we need more testing.
 
 ## [0.1.0]: 2026-09-21
 

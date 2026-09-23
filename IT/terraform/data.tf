@@ -60,7 +60,7 @@ data "aws_iam_policy_document" "allow-policy" {
     ]
 
     resources = [
-      aws_secretsmanager_secret.this.arn
+      module.secret.arn
     ]
   }
 

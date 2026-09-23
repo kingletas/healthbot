@@ -3,14 +3,46 @@
 * checkov -d .
 * terraform graph -type=plan | dot -Tpng -o graph.png
 */
-resource "aws_secretsmanager_secret" "this" {
-  #checkov:skip=CKV2_AWS_57:A declared gap in todos.md: rotation needs a function per vendor token, and none is written.
-  name       = local.secret_name
-  kms_key_id = module.kms.arn
+module "secret" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=71e3b4bc696910d279cce526c215208cd9b28c42" # v0.5.0
 
-  tags = merge(local.tags, {
-    Name = upper(format("%ssecret", local.prefix))
-  })
+  name        = local.secret_name
+  kms_key_arn = module.kms.arn
+
+  # Written once, at creation; the module ignores later changes, so a value
+  # rotated in Secrets Manager is never overwritten. The first write still
+  # lands in state in clear, which stopping the seeding is what fixes.
+  initial_version = {
+    json = {
+      topic_arn           = data.aws_sns_topic.this.arn
+      dbClusterIdentifier = data.aws_rds_cluster.this.id
+      twilio_account      = var.twilio_account
+      twilio_token        = var.twilio_token
+      twilio_from         = var.twilio_from
+      twilio_to           = var.twilio_to
+      slack_channel       = var.slack_channel
+      slack_token         = var.slack_token
+      king_slack_token    = var.king_slack_token
+      user_slack_token    = var.user_slack_token
+      ga_property_id      = var.ga_property_id
+      ga_auth_secrets     = base64encode(file(pathexpand(var.secrets_path)))
+      new_relic_api       = var.new_relic_api
+    }
+  }
+
+  tags = local.tags
+}
+
+# Adopts the secret and its first version, so the plan moves them rather than
+# deleting the secret the bot reads on every run.
+moved {
+  from = aws_secretsmanager_secret.this
+  to   = module.secret.aws_secretsmanager_secret.this
+}
+
+moved {
+  from = aws_secretsmanager_secret_version.this
+  to   = module.secret.aws_secretsmanager_secret_version.this[0]
 }
 
 resource "aws_ssm_parameter" "hb_secret_name" {
@@ -58,34 +90,5 @@ resource "aws_ssm_parameter" "hb_environment" {
 
   tags = merge(local.tags, {
     Name = upper(format("%sssm-environment-param", local.prefix))
-  })
-}
-
-resource "aws_secretsmanager_secret_version" "this" {
-  secret_id = aws_secretsmanager_secret.this.id
-
-  # Seeding runs once, at creation. After that the secret is rotated in
-  # Secrets Manager, not through terraform. Without ignore_changes every
-  # apply would overwrite a rotated credential with the tfvars copy and land
-  # the values in state again. Note the initial apply still writes them to
-  # state; full stop-seeding is the follow-up once there is a plan diff.
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-
-  secret_string = jsonencode({
-    topic_arn           = data.aws_sns_topic.this.arn
-    dbClusterIdentifier = data.aws_rds_cluster.this.id
-    twilio_account      = var.twilio_account
-    twilio_token        = var.twilio_token
-    twilio_from         = var.twilio_from
-    twilio_to           = var.twilio_to
-    slack_channel       = var.slack_channel
-    slack_token         = var.slack_token
-    king_slack_token    = var.king_slack_token
-    user_slack_token    = var.user_slack_token
-    ga_property_id      = var.ga_property_id
-    ga_auth_secrets     = base64encode(file(pathexpand(var.secrets_path)))
-    new_relic_api       = var.new_relic_api
   })
 }
