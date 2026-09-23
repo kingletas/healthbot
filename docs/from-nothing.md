@@ -70,6 +70,16 @@ Two stacks, and they want these ports to themselves: 4566, 8080, 8081, 8065,
 3000, 9090 and 4318. If something else on your machine holds one, stop it first,
 or Docker refuses the whole stack with `port is already allocated`.
 
+The two stub ports, 8080 and 8081, can move instead. Export new ones in the
+shell you use for the rest of this guide, and every step below follows them,
+including the `healthbot-local` commands:
+
+```bash
+export HB_LOCAL_STORE_PORT=18080 HB_LOCAL_API_PORT=18081
+```
+
+Where this guide shows `localhost:8081`, use your API port.
+
 The first stack is the AWS emulator. It has to be MiniStack, and a substitute
 that merely answers the same API will not do:
 

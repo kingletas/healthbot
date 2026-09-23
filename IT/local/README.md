@@ -34,6 +34,8 @@ uv run healthbot-local seed
 uv run healthbot-local status
 ```
 
+If 8080 or 8081 is already taken on your machine, set `HB_LOCAL_STORE_PORT` and `HB_LOCAL_API_PORT` before `docker compose up` and keep them set. Compose publishes the stubs on those ports, and `healthbot-local` reads the same two, so `seed`, `status` and `run-env` follow. When the storefront has moved, `run-env` writes a copy of `config/site.yml` into `local.d/config` with `base_url` pointed at it and names that directory instead.
+
 Then run the bot itself. `healthbot-local run-env` prints this with every seam spelled out:
 
 ```bash

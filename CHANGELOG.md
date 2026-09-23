@@ -25,6 +25,11 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   moves the secret and its version, changes the secret's `Name` tag to the
   secret's own name, and keeps its ARN, so the bot reads the same secret
   throughout. Proved against a local emulator only; we need more testing.
+- **The local stack's stub ports can move.** Set `HB_LOCAL_STORE_PORT` and
+  `HB_LOCAL_API_PORT` before `make up` when 8080 or 8081 is taken. The
+  `healthbot-local` commands and the integration suite read the same two, and
+  `run-env` points the bot at a moved storefront through a generated
+  `local.d/config/site.yml`. Unset, everything stays on 8080 and 8081.
 
 ## [0.1.0]: 2026-09-21
 

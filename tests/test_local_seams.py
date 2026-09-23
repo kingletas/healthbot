@@ -9,6 +9,7 @@ import json
 
 import boto3
 import pytest
+import yaml
 from moto import mock_aws
 
 import healthbot.checks.nr as nr
@@ -217,6 +218,32 @@ def test_seeder_refuses_non_local_endpoints(endpoint):
 )
 def test_seeder_accepts_local_endpoints(endpoint):
     local_env.require_local(endpoint)
+
+
+def _repo_with_local_site(root, base_url):
+    config = root / "IT" / "local" / "config"
+    config.mkdir(parents=True)
+    (config / "site.yml").write_text(f"base_url: {base_url}\ncanary_urls:\n    - checkout\n")
+
+
+def test_the_tracked_local_config_serves_the_default_storefront(tmp_path, monkeypatch):
+    _repo_with_local_site(tmp_path, "http://localhost:8080/")
+    monkeypatch.setattr(local_env, "STORE_BASE", "http://localhost:8080")
+
+    assert local_env.local_config_dir(str(tmp_path)) == str(tmp_path / "IT" / "local" / "config")
+    assert not (tmp_path / "local.d").exists()
+
+
+def test_a_moved_storefront_gets_a_config_pointing_at_it(tmp_path, monkeypatch):
+    _repo_with_local_site(tmp_path, "http://localhost:8080/")
+    monkeypatch.setattr(local_env, "STORE_BASE", "http://localhost:18080")
+
+    derived = local_env.local_config_dir(str(tmp_path))
+
+    assert derived == str(tmp_path / "local.d" / "config")
+    site = yaml.safe_load((tmp_path / "local.d" / "config" / "site.yml").read_text())
+    assert site["base_url"] == "http://localhost:18080/"
+    assert site["canary_urls"] == ["checkout"]
 
 
 def test_the_default_endpoint_passes_its_own_guard():

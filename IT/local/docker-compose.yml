@@ -16,6 +16,7 @@
 #     Mattermost   -> Slack (the stub's /slack shim relays chat.postMessage)
 #     stubs :8081  -> New Relic and GA APIs, Slack shim, chaos /control
 #     stubs :8080  -> the storefront (Playwright checkout journey and the canary sweep)
+#                     (host ports: HB_LOCAL_API_PORT and HB_LOCAL_STORE_PORT)
 #     feeder       -> publishes CloudWatch datapoints once a minute
 #     included     -> otel-collector, Prometheus, Grafana, Redis from
 #                     ../observability/docker-compose.yml
@@ -44,12 +45,14 @@ services:
         build: ./stubs
         # Loopback, like everything else in this stack: the only caller
         # outside the compose network is the bot running on this machine.
+        # The host ports move with HB_LOCAL_STORE_PORT and HB_LOCAL_API_PORT,
+        # which healthbot-local reads too, so both sides agree.
         ports:
-            - "127.0.0.1:8080:8080" # fake storefront
-            - "127.0.0.1:8081:8081" # NR + GA + Slack shim + /control
+            - "127.0.0.1:${HB_LOCAL_STORE_PORT:-8080}:8080" # fake storefront
+            - "127.0.0.1:${HB_LOCAL_API_PORT:-8081}:8081" # NR + GA + Slack shim + /control
         environment:
             MATTERMOST_URL: http://mattermost:8065
-            PUBLIC_API_BASE: http://localhost:8081
+            PUBLIC_API_BASE: http://localhost:${HB_LOCAL_API_PORT:-8081}
         depends_on:
             - mattermost
 

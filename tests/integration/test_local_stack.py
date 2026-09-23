@@ -20,17 +20,17 @@ from os import environ, path
 import pytest
 import requests
 
+import healthbot.local_env as local_env
+
 pytestmark = pytest.mark.integration
 
-# The same overrides the seeder reads, so pointing one of them at a stack on
-# different ports cannot leave the tests asserting against another. Hardcoded,
-# they skipped the whole suite on any machine where 8080 was already taken.
-AWS_ENDPOINT = environ.get("HB_LOCAL_AWS_ENDPOINT", "http://172.17.0.1:4566")
-STORE = environ.get("HB_LOCAL_STORE_BASE", "http://localhost:8080")
-API = environ.get("HB_LOCAL_API_BASE", "http://localhost:8081")
-MATTERMOST = environ.get("HB_LOCAL_MATTERMOST", "http://localhost:8065")
+# The seeder's own values, so a stack moved to other ports with
+# HB_LOCAL_STORE_PORT or HB_LOCAL_API_PORT is the one these tests assert against.
+AWS_ENDPOINT = local_env.AWS_ENDPOINT
+STORE = local_env.STORE_BASE
+API = local_env.API_BASE
+MATTERMOST = local_env.MATTERMOST
 REPO_ROOT = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
-LOCAL_CONFIG = environ.get("HB_CONFIG_DIR") or path.join(REPO_ROOT, "IT", "local", "config")
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -55,7 +55,9 @@ def local_run_env(monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
-    monkeypatch.setenv("HB_CONFIG_DIR", LOCAL_CONFIG)
+    monkeypatch.setenv(
+        "HB_CONFIG_DIR", environ.get("HB_CONFIG_DIR") or local_env.local_config_dir(REPO_ROOT)
+    )
     monkeypatch.setenv("HB_NR_API_URL", f"{API}/nr/v2/")
     monkeypatch.setenv("HB_SLACK_API_URL", f"{API}/slack/")
     monkeypatch.setenv("HB_GA_DISCOVERY_URL", f"{API}/ga/discovery")
