@@ -30,6 +30,10 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   `healthbot-local` commands and the integration suite read the same two, and
   `run-env` points the bot at a moved storefront through a generated
   `local.d/config/site.yml`. Unset, everything stays on 8080 and 8081.
+- **The test suite refuses a first-boot setting the deploy would drop.** Every
+  key cloud-init writes into `/etc/healthbot.env` has to be rendered from
+  `healthbot_env` or refused by the playbook when missing. A key added to the
+  first-boot payload without either now fails `make test`.
 
 ## [0.1.0]: 2026-09-21
 
