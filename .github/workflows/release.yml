@@ -53,10 +53,19 @@ jobs:
           enable-cache: true
 
       - name: Build and install the wheel from this tag
+        env:
+          VERSION: ${{ steps.pick.outputs.version }}
         run: |
           uv build
           uv venv /tmp/release-check
           VIRTUAL_ENV=/tmp/release-check uv pip install dist/healthbot-*.whl
+          # The package stamps its own version on every span, so a tag that
+          # disagrees with it publishes one number and reports another.
+          reported="$(/tmp/release-check/bin/python -c 'import healthbot; print(healthbot.__version__)')"
+          if [ "$reported" != "$VERSION" ]; then
+            echo "the package reports $reported, not $VERSION" >&2
+            exit 1
+          fi
           for script in healthbot healthbot-dora healthbot-demo healthbot-local; do
             test -x "/tmp/release-check/bin/$script" || {
               echo "the wheel does not provide $script" >&2

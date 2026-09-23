@@ -4,6 +4,15 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ## [Unreleased]
 
+## [0.2.0]: 2026-09-23
+
+### Fixed
+
+- **The package reports the version it was released as.** 0.1.0 was tagged
+  while the package still called itself 0.1.2, and that is the number every
+  span carried as `service.version`. A release now stops if the built package
+  reports a different version from its tag.
+
 ### Changed
 
 - **Vendor tokens no longer reach Terraform state.** The secret is written as a

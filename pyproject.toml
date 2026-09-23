@@ -1,6 +1,6 @@
 [project]
 name = "healthbot"
-version = "0.1.2"
+version = "0.2.0"
 description = "HealthBot Site Reliability Checker"
 authors = [{ name = "Luis Tineo", email = "luis@kingletas.com" }]
 license = "MIT"
