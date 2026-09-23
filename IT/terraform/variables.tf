@@ -124,22 +124,26 @@ variable "egress_map" {
 }
 
 /**
-* Secrets values
+* Secrets values. Ephemeral, so a value reaches Secrets Manager through the
+* write-only argument and never a plan file or state.
 */
 variable "user_slack_token" {
   description = "Token to post as the user instead of the bot"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "slack_token" {
   description = "Token for the Bot App"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "king_slack_token" {
   description = "Debugging token"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "slack_channel" {
   description = "Slack channel to post messages to"
@@ -149,26 +153,31 @@ variable "twilio_to" {
   description = "Number to send SMS to"
   type        = number
   sensitive   = true
+  ephemeral   = true
 }
 variable "twilio_from" {
   description = "Number sending the SMS provided by twilio"
   type        = number
   sensitive   = true
+  ephemeral   = true
 }
 variable "twilio_token" {
   description = "Token to connect with Twilio"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "twilio_account" {
   description = "Account to use for Twilio"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "ga_property_id" {
   description = "GA4 property to read realtime active users from, numeric or properties/<id>"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 variable "secrets_path" {
   description = "GA secrets file"
@@ -178,6 +187,7 @@ variable "new_relic_api" {
   description = "New Relic API key to get the data"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 
 # CloudWatch Alarm

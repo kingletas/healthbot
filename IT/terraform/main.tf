@@ -5,31 +5,29 @@
 */
 module "secret" {
   #checkov:skip=CKV_AWS_304:Rotation is manual, every 90 days, as SECURITY.md says; no rotation resource is created here.
-  source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
 
   name        = local.secret_name
   kms_key_arn = module.kms.arn
 
-  # Written once, at creation; the module ignores later changes, so a value
-  # rotated in Secrets Manager is never overwritten. The first write still
-  # lands in state in clear, which stopping the seeding is what fixes.
-  initial_version = {
-    json = {
-      topic_arn           = data.aws_sns_topic.this.arn
-      dbClusterIdentifier = data.aws_rds_cluster.this.id
-      twilio_account      = var.twilio_account
-      twilio_token        = var.twilio_token
-      twilio_from         = var.twilio_from
-      twilio_to           = var.twilio_to
-      slack_channel       = var.slack_channel
-      slack_token         = var.slack_token
-      king_slack_token    = var.king_slack_token
-      user_slack_token    = var.user_slack_token
-      ga_property_id      = var.ga_property_id
-      ga_auth_secrets     = base64encode(file(pathexpand(var.secrets_path)))
-      new_relic_api       = var.new_relic_api
-    }
-  }
+  # Write-only, so the vendor credentials never reach state or a plan. Raise
+  # the version only to push new values; rotation in Secrets Manager is kept.
+  secret_string_wo_version = 1
+  secret_string_wo = jsonencode({
+    topic_arn           = data.aws_sns_topic.this.arn
+    dbClusterIdentifier = data.aws_rds_cluster.this.id
+    twilio_account      = var.twilio_account
+    twilio_token        = var.twilio_token
+    twilio_from         = var.twilio_from
+    twilio_to           = var.twilio_to
+    slack_channel       = var.slack_channel
+    slack_token         = var.slack_token
+    king_slack_token    = var.king_slack_token
+    user_slack_token    = var.user_slack_token
+    ga_property_id      = var.ga_property_id
+    ga_auth_secrets     = base64encode(file(pathexpand(var.secrets_path)))
+    new_relic_api       = var.new_relic_api
+  })
 
   tags = local.tags
 }
@@ -49,7 +47,7 @@ moved {
 # The four settings the bot reads at run time, under the deployment's prefix.
 module "parameters" {
   #checkov:skip=CKV2_AWS_34:The values name resources and hold no secret; the credentials are in Secrets Manager under the KMS key.
-  source = "github.com/kingletas/terraform-aws-modules//modules/ssm-parameter?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/ssm-parameter?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
 
   path_prefix = trimsuffix(local.sm_prefix, "/")
 

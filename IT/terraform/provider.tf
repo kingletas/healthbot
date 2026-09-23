@@ -1,7 +1,7 @@
 terraform {
-  # use_lockfile in backend.tf needs 1.10+; state what the config assumes so
-  # an older CLI errors clearly instead of confusingly
-  required_version = "~> 1.10"
+  # The write-only secret value needs 1.11 or later, and use_lockfile in
+  # backend.tf needs 1.10; an older CLI then errors clearly.
+  required_version = "~> 1.11"
 
   required_providers {
     aws = {

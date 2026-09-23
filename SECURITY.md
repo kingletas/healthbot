@@ -23,11 +23,12 @@ This repository will not do it for you or tell you when it is due.
 
 ## Terraform state holds your credentials
 
-Terraform writes the values it manages into state in plaintext, and this
-configuration builds a Secrets Manager secret out of your vendor tokens. **A
-state file from this tree is as sensitive as the tokens in it**, and so is any
-`.backup` next to it. Keep state in the S3 backend, and treat any local copy you
-find as an exposure to rotate rather than a file to tidy up.
+Terraform writes the values it manages into state in plaintext. The vendor
+tokens now reach Secrets Manager as a write-only value, so a new apply does not
+put them in state. **A state file written before that change still holds the
+first set of tokens**, and so does any `.backup` or earlier S3 version of it.
+Keep state in the S3 backend, and treat any local copy you find as an exposure
+to rotate rather than a file to tidy up.
 [IT/terraform/README.md](IT/terraform/README.md) has the detail.
 
 ## Vendor tokens are rotated by hand

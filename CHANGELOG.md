@@ -6,6 +6,22 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ### Changed
 
+- **Vendor tokens no longer reach Terraform state.** The secret is written as a
+  write-only value from variables marked `ephemeral`, so neither state nor a
+  saved plan holds a token. Upgrading changes the existing secret version in
+  place: its `secret_string` is emptied from state and nothing is replaced.
+  **State written before this still holds the first set of tokens**, so rotate
+  them once this is applied. Needs Terraform 1.11 or later. Proved against a
+  local emulator only; it needs testing in AWS.
+- **The IAM role and instance profile come from the shared module library,**
+  at v0.7.0, under the names they already have. `moved` blocks carry both
+  across. The plan adds the stack's tags to the instance profile, changes the
+  role's `Name` tag to the role's own name, and gives the trust statement the ID
+  `TrustServices`; what the role may do does not change. The permission policy
+  stays in this configuration, because inside the module it would form a
+  dependency loop with the KMS key. Proved against a local emulator only; it
+  needs testing in AWS.
+- **Every library module is pinned at v0.7.0**, by commit.
 - **The log file is opened when a command runs, not when the package is
   imported.** `healthbot --help`, `healthbot --version` and anything importing
   HealthBot as a library no longer create `HB_LOG_DIR` on the way past. Every

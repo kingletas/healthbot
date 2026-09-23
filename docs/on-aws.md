@@ -351,9 +351,12 @@ terraform apply -var-file=prod.tfvars
 Terraform prints the instance's public DNS name and the Parameter Store prefix
 it created. You need both in the next step.
 
-The first apply seeds your vendor credentials into Secrets Manager, and then
+The first apply writes your vendor credentials into Secrets Manager as a
+write-only value, so they never reach Terraform state or a saved plan, and then
 never touches them again. **Rotating a token is something you do in the Secrets
-Manager console**, not by editing this file and re-applying.
+Manager console.** To push a whole new set from this file instead, raise
+`secret_string_wo_version` in `IT/terraform/main.tf` and apply; nothing is
+written while that number stays the same.
 
 ## Step 8: install the bot
 

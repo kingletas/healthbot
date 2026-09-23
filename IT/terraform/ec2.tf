@@ -1,29 +1,41 @@
-resource "aws_iam_role" "this" {
-  name = format("%srole", local.prefix)
+# Adopts the role and profile under the names they already have, so the plan
+# moves them rather than replacing the role the instance runs as.
+module "role" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/iam-role?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
 
-  assume_role_policy = data.aws_iam_policy_document.assume-policy.json
+  name                  = format("%srole", local.prefix)
+  use_name_prefix       = false
+  instance_profile_name = format("%sprofile", local.prefix)
+
+  trusted_services        = ["ec2.amazonaws.com", "cloudwatch.amazonaws.com"]
+  create_instance_profile = true
 
   tags = local.tags
 }
 
-resource "aws_iam_instance_profile" "this" {
-  name = format("%sprofile", local.prefix)
-  role = aws_iam_role.this.name
-}
-
-
+# Stays at the root: it names the key and the secret, the key names this role,
+# and inside the module that loop would be a dependency cycle.
 resource "aws_iam_role_policy" "this" {
   name = format("%ssm-policy", local.prefix)
-  role = aws_iam_role.this.id
+  role = module.role.id
 
   policy = data.aws_iam_policy_document.allow-policy.json
+}
 
+moved {
+  from = aws_iam_role.this
+  to   = module.role.aws_iam_role.this
+}
+
+moved {
+  from = aws_iam_instance_profile.this
+  to   = module.role.aws_iam_instance_profile.this[0]
 }
 
 resource "aws_instance" "this" {
   ami                  = data.aws_ami.this.id
   instance_type        = var.instance_type
-  iam_instance_profile = aws_iam_instance_profile.this.name
+  iam_instance_profile = module.role.instance_profile_name
   key_name             = aws_key_pair.this.key_name
 
   vpc_security_group_ids      = [aws_security_group.this["ssh"].id]
@@ -82,7 +94,7 @@ resource "aws_instance" "this" {
 # Keyed by the deployment name, which is known at plan time; the instance id
 # goes in dimensions, where an unknown value is fine.
 module "alarms" {
-  source = "github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
 
   alarms = {
     (format("%sstatus-check", local.prefix)) = {

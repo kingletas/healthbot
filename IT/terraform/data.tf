@@ -19,17 +19,6 @@ data "aws_ami" "this" {
 
 }
 
-data "aws_iam_policy_document" "assume-policy" {
-
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com", "cloudwatch.amazonaws.com"]
-    }
-  }
-}
 data "aws_vpc" "this" {
   id = var.vpc_id
 }

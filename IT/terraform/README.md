@@ -42,9 +42,9 @@ An apply creates fourteen of the seventeen, and a plan afterwards reports a resi
 
 Nothing is worked around in the deployable configuration for any of these, and none of them is a statement about real EC2.
 
-## State holds your credentials in plaintext
+## Older state holds your credentials in plaintext
 
-Terraform records every value it manages, and this configuration builds a Secrets Manager secret out of the vendor tokens you pass in. **A state file from this tree is as sensitive as those tokens**, and so is any `.backup` Terraform leaves beside it. Nothing encrypts it for you locally.
+Terraform records every value it manages. The vendor tokens are passed to Secrets Manager as a write-only value through variables marked `ephemeral`, so neither the state nor a saved plan holds them. **A state file written before that change still does**, and so does any `.backup` Terraform left beside it or any earlier version in the S3 bucket. Nothing encrypts a local copy for you.
 
 Keep state in the S3 backend, which is where `backend.tf` points and where it is encrypted and versioned. A local `terraform.tfstate` only appears when you apply without a backend, which is easy to do by accident on a first run and easy to forget afterwards.
 
@@ -63,7 +63,7 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Version |
 | ---- | ------- |
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.10 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.11 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~>6.61.0 |
 | <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) | ~>2.4 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~>3.9 |
@@ -80,17 +80,16 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
-| <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
-| <a name="module_parameters"></a> [parameters](#module\_parameters) | github.com/kingletas/terraform-aws-modules//modules/ssm-parameter | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
-| <a name="module_secret"></a> [secret](#module\_secret) | github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
+| <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | af6f00f1646e1e99e635df03b09f9753da8fe59d |
+| <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | af6f00f1646e1e99e635df03b09f9753da8fe59d |
+| <a name="module_parameters"></a> [parameters](#module\_parameters) | github.com/kingletas/terraform-aws-modules//modules/ssm-parameter | af6f00f1646e1e99e635df03b09f9753da8fe59d |
+| <a name="module_role"></a> [role](#module\_role) | github.com/kingletas/terraform-aws-modules//modules/iam-role | af6f00f1646e1e99e635df03b09f9753da8fe59d |
+| <a name="module_secret"></a> [secret](#module\_secret) | github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret | af6f00f1646e1e99e635df03b09f9753da8fe59d |
 
 ## Resources
 
 | Name | Type |
 | ---- | ---- |
-| [aws_iam_instance_profile.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
-| [aws_iam_role.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_key_pair.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
@@ -100,7 +99,6 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | [aws_availability_zones.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.allow-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
-| [aws_iam_policy_document.assume-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_session_context.deployer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_session_context) | data source |
 | [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_rds_cluster.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/rds_cluster) | data source |

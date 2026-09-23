@@ -16,7 +16,7 @@ module "kms" {
   #checkov:skip=CKV_AWS_109:A key policy's Resource "*" is the key itself, and the kms:* grant is the admin statement, limited to the named admins.
   #checkov:skip=CKV_AWS_111:A key policy's Resource "*" is the key itself, so the write actions cannot reach any other resource.
   #checkov:skip=CKV_AWS_356:A key policy's Resource "*" is the key itself; a key policy cannot name its own ARN before the key exists.
-  source = "github.com/kingletas/terraform-aws-modules//modules/kms-key?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/kms-key?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
 
   name        = local.name
   description = format("%s KMS key", var.environment)
@@ -26,7 +26,7 @@ module "kms" {
   # The module builds the policy: whoever runs the deploy administers the key,
   # and only the instance role may use it. Without an admin the account root would be.
   admin_arns = distinct(concat(var.kms_admin_arns, [data.aws_iam_session_context.deployer.issuer_arn]))
-  user_arns  = [aws_iam_role.this.arn]
+  user_arns  = [module.role.arn]
 
   tags = local.tags
 }
