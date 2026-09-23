@@ -46,6 +46,9 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   changing and nothing replaced. The KMS key, the secret and the alarms plan no
   change from the new pin. Proved against a local emulator only; we need more
   testing.
+- **Vendor tokens are rotated by hand, every 90 days.** `SECURITY.md` and the
+  *Day to day* section of `docs/on-aws.md` now say which tokens, how often and
+  in what order. There is no rotation function and none is planned.
 
 ## [0.1.0]: 2026-09-21
 

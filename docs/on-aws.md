@@ -486,9 +486,12 @@ sudo ls -t /var/log/healthbot | head -5
 one. The play is idempotent, so a deploy that changes nothing reports
 `changed=0`.
 
-**Rotating a credential.** Edit the secret in the Secrets Manager console. The
-next run picks it up, because credentials are fetched fresh every run and never
-cached.
+**Rotating a credential.** Rotate every vendor token by hand at least every 90
+days: the Twilio auth token, the three Slack tokens, the New Relic API key and
+the Google service account key. Issue the new one at the vendor, edit the secret
+in the Secrets Manager console, then revoke the old one. The next run picks it
+up, because credentials are fetched fresh every run and never cached. Nothing
+rotates them for you: the secret has no rotation function, on purpose.
 
 **Changing a threshold.** Edit the `site.yml` your `HB_CONFIG_DIR` points at.
 No deploy needed.

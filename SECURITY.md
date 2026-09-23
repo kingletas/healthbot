@@ -30,6 +30,15 @@ state file from this tree is as sensitive as the tokens in it**, and so is any
 find as an exposure to rotate rather than a file to tidy up.
 [IT/terraform/README.md](IT/terraform/README.md) has the detail.
 
+## Vendor tokens are rotated by hand
+
+The secret holds tokens for Twilio, Slack, New Relic and Google. **Rotate each
+of them by hand at least every 90 days**, and at once if a copy may have been
+exposed. There is no Secrets Manager rotation function: writing one per vendor
+is a lot of code to maintain for a bot that runs on a single instance, so
+rotation is a scheduled manual task instead. [docs/on-aws.md](docs/on-aws.md)
+has the steps under *Day to day*.
+
 ## Reporting a vulnerability
 
 **Don't open a public issue.**

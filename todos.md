@@ -29,7 +29,7 @@ Everything genuinely open, grouped by what unblocks it. What's already shipped i
 
     **The claim that `user_data` has a StateFunc hashing it is also wrong for the pinned provider, and this note used to say it did.** The 6.61.0 binary carries the string `user_data attribute is set as cleartext in state` and 5.100.0 does not: v6 removed the hashing. So both `user_data` and `user_data_base64` put the payload in state in clear, and that is no longer a reason to prefer one over the other.
 
-- [ ] **Rotate the secret's tokens automatically.** Secrets Manager rotation needs a function per vendor token, one each for Twilio, Slack, New Relic and Google, and there isn't one yet. The secret's module call in `main.tf` sets no `rotation`. checkov does not read into a module fetched from git, so `CKV2_AWS_57` no longer reports this.
+- [x] ~~**Rotate the secret's tokens automatically.**~~ **Decided: rotation is manual, every 90 days**, and `SECURITY.md` and `docs/on-aws.md` say so. No rotation function will be written, so the secret's module call sets no `rotation` and checkov's rotation findings are skipped with that reason.
 
 ## Needs time and data
 
