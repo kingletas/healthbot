@@ -104,6 +104,8 @@ shell: ## Shellcheck every tracked shell script
 # checkov reads the library modules only when it downloads them; without that it
 # scores the root alone and passes on nothing. They go to a cache outside the
 # tree, because the commit gate's scanners walk the whole working tree.
+# It still logs "Unable to load module ... list index out of range" for each
+# module on every run; the module.* resources in its results show they are read.
 CHECKOV ?= $(UV) tool run --from checkov==3.3.15 checkov
 CHECKOV_MODULES ?= $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/healthbot/checkov-modules
 
