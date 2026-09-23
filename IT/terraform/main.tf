@@ -6,7 +6,7 @@
 resource "aws_secretsmanager_secret" "this" {
   #checkov:skip=CKV2_AWS_57:A declared gap in todos.md: rotation needs a function per vendor token, and none is written.
   name       = local.secret_name
-  kms_key_id = aws_kms_alias.this.target_key_arn
+  kms_key_id = module.kms.arn
 
   tags = merge(local.tags, {
     Name = upper(format("%ssecret", local.prefix))

@@ -52,7 +52,7 @@ resource "aws_instance" "this" {
     iops      = (var.volume_type == "gp2" ? null : var.iops)
     encrypted = true
 
-    kms_key_id = aws_kms_key.this.id
+    kms_key_id = module.kms.key_id
 
     tags = merge(local.tags,
       {

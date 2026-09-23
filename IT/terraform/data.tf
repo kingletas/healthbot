@@ -74,7 +74,7 @@ data "aws_iam_policy_document" "allow-policy" {
       "kms:GenerateDataKey",
       "kms:DescribeKey"
     ]
-    resources = [aws_kms_key.this.arn]
+    resources = [module.kms.arn]
   }
 
   statement {

@@ -7,23 +7,39 @@ resource "random_string" "this" {
   min_upper = 2
 }
 
-resource "aws_kms_key" "this" {
-  #checkov:skip=CKV2_AWS_64:A declared gap in todos.md: the default key policy delegates to IAM, and an explicit one changes the live key.
+module "kms" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/kms-key?ref=71e3b4bc696910d279cce526c215208cd9b28c42" # v0.5.0
+
+  name        = local.name
   description = format("%s KMS key", var.environment)
 
-  is_enabled = true
-
-  enable_key_rotation     = true
   deletion_window_in_days = 15
 
-  key_usage = "ENCRYPT_DECRYPT"
-  tags = merge(local.tags, {
-    Name = upper(format("%skms", local.prefix))
+  # The policy AWS attaches to a key created without one, written out so adopting
+  # the key into the module changes nobody's access. Narrowing it is its own change.
+  policy_json = jsonencode({
+    Version = "2012-10-17"
+    Id      = "key-default-1"
+    Statement = [{
+      Sid       = "Enable IAM User Permissions"
+      Effect    = "Allow"
+      Principal = { AWS = format("arn:%s:iam::%s:root", data.aws_partition.current.partition, data.aws_caller_identity.current.account_id) }
+      Action    = "kms:*"
+      Resource  = "*"
+    }]
   })
 
+  tags = local.tags
 }
 
-resource "aws_kms_alias" "this" {
-  name          = format("alias/%s", local.name)
-  target_key_id = aws_kms_key.this.key_id
+# Adopts the key and alias created at root addresses, so the plan moves them
+# rather than scheduling the key for deletion and creating another.
+moved {
+  from = aws_kms_key.this
+  to   = module.kms.aws_kms_key.this
+}
+
+moved {
+  from = aws_kms_alias.this
+  to   = module.kms.aws_kms_alias.this
 }

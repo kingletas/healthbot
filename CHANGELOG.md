@@ -10,6 +10,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   imported.** `healthbot --help`, `healthbot --version` and anything importing
   HealthBot as a library no longer create `HB_LOG_DIR` on the way past. Every
   console script still writes the same file to the same place as before.
+- **The KMS key and its alias come from the shared module library.** `moved`
+  blocks carry an existing key across, so a plan shows its `Name` tag changing
+  and nothing else: the key keeps its id, its policy and its fifteen-day
+  deletion window. The policy is written out as the one AWS attaches by default,
+  so nobody's access changes. Proved against a local emulator only; we need more
+  testing before an apply against a real account.
 
 ## [0.1.0]: 2026-09-21
 
