@@ -1,6 +1,7 @@
 {
   "uid": "healthbot-dora",
   "title": "HealthBot DORA",
+  "description": "Four of DORA's five metrics as trends over time, with no performance tiers. Computed by healthbot-dora export from the deploy journal. Deployment rework rate is not collected.",
   "tags": [
     "healthbot",
     "dora"
@@ -34,20 +35,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.03333333333333333
-              },
-              {
-                "color": "yellow",
-                "value": 0.14285714285714285
-              },
-              {
-                "color": "green",
-                "value": 1
               }
             ]
           }
@@ -72,10 +61,11 @@
           ]
         },
         "textMode": "value_and_name",
-        "graphMode": "none"
+        "graphMode": "area",
+        "colorMode": "none"
       },
       "id": 1,
-      "description": "Deploys per day over the window. Elite is on demand, at least daily; high is weekly or better; medium is monthly or better. Bands are the four performance levels published in the 2021 State of DevOps report."
+      "description": "Deploys per day over the window. Computed by healthbot-dora export from the deploy journal."
     },
     {
       "title": "Lead time for changes",
@@ -97,20 +87,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 3600
-              },
-              {
-                "color": "orange",
-                "value": 604800
-              },
-              {
-                "color": "red",
-                "value": 2592000
               }
             ]
           }
@@ -135,10 +113,11 @@
           ]
         },
         "textMode": "value_and_name",
-        "graphMode": "none"
+        "graphMode": "area",
+        "colorMode": "none"
       },
       "id": 2,
-      "description": "Commit to deploy. Elite is under an hour, high under a week, medium under a month. Bands are the four performance levels published in the 2021 State of DevOps report."
+      "description": "Commit to deploy. Computed by healthbot-dora export from the deploy journal."
     },
     {
       "title": "Change failure rate",
@@ -160,12 +139,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 0.15
               }
             ]
           }
@@ -190,13 +165,14 @@
           ]
         },
         "textMode": "value_and_name",
-        "graphMode": "none"
+        "graphMode": "area",
+        "colorMode": "none"
       },
       "id": 3,
-      "description": "Share of deploys that needed a fix. Elite is 15% or under. Bands are the four performance levels published in the 2021 State of DevOps report."
+      "description": "Share of deploys that needed a fix. Computed by healthbot-dora export from the deploy journal."
     },
     {
-      "title": "Mean time to restore",
+      "title": "Failed deployment recovery time",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
@@ -215,20 +191,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 3600
-              },
-              {
-                "color": "orange",
-                "value": 86400
-              },
-              {
-                "color": "red",
-                "value": 604800
               }
             ]
           }
@@ -253,13 +217,14 @@
           ]
         },
         "textMode": "value_and_name",
-        "graphMode": "none"
+        "graphMode": "area",
+        "colorMode": "none"
       },
       "id": 4,
-      "description": "Incident to resolve. Elite is under an hour, high under a day, medium under a week. Bands are the four performance levels published in the 2021 State of DevOps report."
+      "description": "Incident to resolve, the metric DORA now calls failed deployment recovery time. Computed by healthbot-dora export from the deploy journal."
     },
     {
-      "title": "Lead time and time to restore",
+      "title": "Lead time and failed deployment recovery time",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -293,7 +258,7 @@
             "uid": "prometheus"
           },
           "expr": "max by (metric) (healthbot_dora_metric{metric=\"mttr_seconds\"})",
-          "legendFormat": "time to restore",
+          "legendFormat": "failed deployment recovery time",
           "refId": "B"
         }
       ],
@@ -362,6 +327,22 @@
         }
       ],
       "id": 6
+    },
+    {
+      "title": "Deployment rework rate",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Not collected.** DORA's fifth metric is the share of deployments that were unplanned and made to fix an incident. The deploy journal does not record whether a deploy was planned, so there is nothing to compute it from."
+      },
+      "id": 7,
+      "description": "Why this metric has no panel."
     }
   ]
 }

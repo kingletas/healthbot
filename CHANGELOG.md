@@ -64,6 +64,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   scored the root alone and passed on nothing. Each finding that does not apply
   here carries a skip with its reason on the module call it belongs to. The first
   run fetches checkov and the modules, which needs the network.
+- **The DORA dashboard shows trends, not tiers.** The Elite, High, Medium and Low
+  colouring is gone, because its thresholds had no source anybody could check,
+  and each stat now carries a sparkline. *Mean time to restore* is renamed
+  *failed deployment recovery time*, DORA's current name for it, and a panel says
+  that deployment rework rate, DORA's fifth metric, is not collected. Each panel
+  says where its number comes from.
 
 ## [0.1.0]: 2026-09-21
 
