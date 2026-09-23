@@ -59,6 +59,11 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   role that will ever deploy this stack in `kms_admin_arns`**, or a later deploy
   from another role cannot change the key. Proved against a local emulator only;
   we need more testing.
+- **`make checkov` scans the infrastructure with the library modules included,**
+  and `make check` runs it, so CI does too. Without the downloaded modules checkov
+  scored the root alone and passed on nothing. Each finding that does not apply
+  here carries a skip with its reason on the module call it belongs to. The first
+  run fetches checkov and the modules, which needs the network.
 
 ## [0.1.0]: 2026-09-21
 

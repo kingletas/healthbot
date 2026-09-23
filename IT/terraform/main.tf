@@ -4,6 +4,7 @@
 * terraform graph -type=plan | dot -Tpng -o graph.png
 */
 module "secret" {
+  #checkov:skip=CKV_AWS_304:Rotation is manual, every 90 days, as SECURITY.md says; no rotation resource is created here.
   source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
   name        = local.secret_name
@@ -47,6 +48,7 @@ moved {
 
 # The four settings the bot reads at run time, under the deployment's prefix.
 module "parameters" {
+  #checkov:skip=CKV2_AWS_34:The values name resources and hold no secret; the credentials are in Secrets Manager under the KMS key.
   source = "github.com/kingletas/terraform-aws-modules//modules/ssm-parameter?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
   path_prefix = trimsuffix(local.sm_prefix, "/")

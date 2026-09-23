@@ -101,6 +101,18 @@ shell: ## Shellcheck every tracked shell script
 	done); \
 	if [ -n "$$scripts" ]; then shellcheck -x $$scripts; fi
 
+# checkov reads the library modules only when it downloads them; without that it
+# scores the root alone and passes on nothing. They go to a cache outside the
+# tree, because the commit gate's scanners walk the whole working tree.
+CHECKOV ?= $(UV) tool run --from checkov==3.3.15 checkov
+CHECKOV_MODULES ?= $(or $(XDG_CACHE_HOME),$(HOME)/.cache)/healthbot/checkov-modules
+
+.PHONY: checkov
+checkov: ## Scan the infrastructure with checkov, library modules included
+	@cd $(ROOT_DIR)/IT/terraform && $(CHECKOV) -d . --framework terraform \
+		--download-external-modules true --external-modules-download-path $(CHECKOV_MODULES) \
+		--compact --quiet
+
 .PHONY: packer
 packer: ## Initialise the AMI template's plugins and validate it against the example vars
 	@cd $(ROOT_DIR)/IT/packer && packer fmt -check .
@@ -114,7 +126,7 @@ tf-local: ## Plan against the local AWS emulator: make tf-local ACTION=plan
 	@$(ROOT_DIR)/IT/terraform/tf-local.sh $(or $(ACTION),plan)
 
 .PHONY: check
-check: lint shell packaging tfstate test terraform tf-docs-check packer ## Everything a commit has to pass
+check: lint shell packaging tfstate test terraform tf-docs-check checkov packer ## Everything a commit has to pass
 
 # --- the local environment ---
 

@@ -13,6 +13,9 @@ data "aws_iam_session_context" "deployer" {
 }
 
 module "kms" {
+  #checkov:skip=CKV_AWS_109:A key policy's Resource "*" is the key itself, and the kms:* grant is the admin statement, limited to the named admins.
+  #checkov:skip=CKV_AWS_111:A key policy's Resource "*" is the key itself, so the write actions cannot reach any other resource.
+  #checkov:skip=CKV_AWS_356:A key policy's Resource "*" is the key itself; a key policy cannot name its own ARN before the key exists.
   source = "github.com/kingletas/terraform-aws-modules//modules/kms-key?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
   name        = local.name
