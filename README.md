@@ -113,7 +113,7 @@ uv run playwright install --with-deps chromium
 
 ### Terraform
 
-Terraform `~> 1.10` is required (the S3 backend uses `use_lockfile`), with the AWS provider pinned `~> 6.61`. Install per the [HashiCorp guide](https://developer.hashicorp.com/terraform/install), then verify with `terraform version`.
+Terraform `~> 1.11` is required (the secret is written as a write-only value, and the S3 backend uses `use_lockfile`), with the AWS provider pinned `~> 6.61`. Install per the [HashiCorp guide](https://developer.hashicorp.com/terraform/install), then verify with `terraform version`.
 
 The backend is a partial configuration, because the state bucket is yours rather than this repository's, so it isn't committed here. Copy the example and point `init` at it:
 

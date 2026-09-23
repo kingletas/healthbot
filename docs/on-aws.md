@@ -86,8 +86,8 @@ Python 3.12, so you do not need one:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Terraform must be **1.10 or newer**, because the state locking this repository
-uses did not exist before then. Install it from the
+Terraform must be **1.11 or newer**: the write-only secret value needs 1.11, and
+the state locking this repository uses needs 1.10. Install it from the
 [HashiCorp guide](https://developer.hashicorp.com/terraform/install) and check:
 
 ```bash
