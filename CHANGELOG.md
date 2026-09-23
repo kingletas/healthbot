@@ -40,6 +40,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   It is the same apply that renames them away from the instance id, so they are
   replaced once, not twice. Planned against a local emulator only, which cannot
   launch the instance the alarms watch; we need more testing.
+- **The four SSM parameters come from the shared module library, and every
+  module call is pinned to its 0.6.0 release.** `moved` blocks carry the
+  parameters across at the same paths, so a plan shows each one's `Name` tag
+  changing and nothing replaced. The KMS key, the secret and the alarms plan no
+  change from the new pin. Proved against a local emulator only; we need more
+  testing.
 
 ## [0.1.0]: 2026-09-21
 

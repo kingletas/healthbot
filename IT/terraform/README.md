@@ -80,9 +80,10 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | 71e3b4bc696910d279cce526c215208cd9b28c42 |
-| <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | 71e3b4bc696910d279cce526c215208cd9b28c42 |
-| <a name="module_secret"></a> [secret](#module\_secret) | github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret | 71e3b4bc696910d279cce526c215208cd9b28c42 |
+| <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
+| <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
+| <a name="module_parameters"></a> [parameters](#module\_parameters) | github.com/kingletas/terraform-aws-modules//modules/ssm-parameter | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
+| <a name="module_secret"></a> [secret](#module\_secret) | github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret | 5e0ae490c797bb1e8178bea00c41cc9d4c060111 |
 
 ## Resources
 
@@ -94,10 +95,6 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_key_pair.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
-| [aws_ssm_parameter.hb_db_identifier](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
-| [aws_ssm_parameter.hb_environment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
-| [aws_ssm_parameter.hb_secret_name](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
-| [aws_ssm_parameter.hb_tag_name](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
 | [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_availability_zones.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |

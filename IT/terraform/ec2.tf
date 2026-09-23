@@ -82,7 +82,7 @@ resource "aws_instance" "this" {
 # Keyed by the deployment name, which is known at plan time; the instance id
 # goes in dimensions, where an unknown value is fine.
 module "alarms" {
-  source = "github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm?ref=71e3b4bc696910d279cce526c215208cd9b28c42" # v0.5.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
   alarms = {
     (format("%sstatus-check", local.prefix)) = {

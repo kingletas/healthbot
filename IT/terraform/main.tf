@@ -4,7 +4,7 @@
 * terraform graph -type=plan | dot -Tpng -o graph.png
 */
 module "secret" {
-  source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=71e3b4bc696910d279cce526c215208cd9b28c42" # v0.5.0
+  source = "github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
   name        = local.secret_name
   kms_key_arn = module.kms.arn
@@ -45,50 +45,45 @@ moved {
   to   = module.secret.aws_secretsmanager_secret_version.this[0]
 }
 
-resource "aws_ssm_parameter" "hb_secret_name" {
-  #checkov:skip=CKV2_AWS_34:The value names a resource and holds no secret; the credentials are in Secrets Manager under the KMS key.
-  name        = format("%ssecret_name", local.sm_prefix)
-  description = "The secret name "
-  type        = "String"
-  value       = local.secret_name
+# The four settings the bot reads at run time, under the deployment's prefix.
+module "parameters" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/ssm-parameter?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
-  tags = merge(local.tags, {
-    Name = upper(format("%sssm-secret-name-param", local.prefix))
-  })
+  path_prefix = trimsuffix(local.sm_prefix, "/")
+
+  parameters = {
+    secret_name   = { description = "The secret name " }
+    db_identifier = { description = "The app aws profile or credentials" }
+    tag_name      = { description = "The tag name to filter by" }
+    environment   = { description = "The environment name" }
+  }
+
+  values = {
+    secret_name   = local.secret_name
+    db_identifier = data.aws_rds_cluster.this.id
+    tag_name      = var.app_environment_tag_name
+    environment   = var.app_environment_name
+  }
+
+  tags = local.tags
 }
 
-resource "aws_ssm_parameter" "hb_db_identifier" {
-  #checkov:skip=CKV2_AWS_34:The value names a resource and holds no secret; the credentials are in Secrets Manager under the KMS key.
-  name        = format("%sdb_identifier", local.sm_prefix)
-  description = "The app aws profile or credentials"
-  type        = "String"
-  value       = data.aws_rds_cluster.this.id
-
-  tags = merge(local.tags, {
-    Name = upper(format("%sssm-db-identifier-param", local.prefix))
-  })
+moved {
+  from = aws_ssm_parameter.hb_secret_name
+  to   = module.parameters.aws_ssm_parameter.this["secret_name"]
 }
 
-resource "aws_ssm_parameter" "hb_tag_name" {
-  #checkov:skip=CKV2_AWS_34:The value names a resource and holds no secret; the credentials are in Secrets Manager under the KMS key.
-  name        = format("%stag_name", local.sm_prefix)
-  description = "The tag name to filter by"
-  type        = "String"
-  value       = var.app_environment_tag_name
-
-  tags = merge(local.tags, {
-    Name = upper(format("%sssm-tag-name-param", local.prefix))
-  })
+moved {
+  from = aws_ssm_parameter.hb_db_identifier
+  to   = module.parameters.aws_ssm_parameter.this["db_identifier"]
 }
 
-resource "aws_ssm_parameter" "hb_environment" {
-  #checkov:skip=CKV2_AWS_34:The value names a resource and holds no secret; the credentials are in Secrets Manager under the KMS key.
-  name        = format("%senvironment", local.sm_prefix)
-  description = "The environment name"
-  type        = "String"
-  value       = var.app_environment_name
+moved {
+  from = aws_ssm_parameter.hb_tag_name
+  to   = module.parameters.aws_ssm_parameter.this["tag_name"]
+}
 
-  tags = merge(local.tags, {
-    Name = upper(format("%sssm-environment-param", local.prefix))
-  })
+moved {
+  from = aws_ssm_parameter.hb_environment
+  to   = module.parameters.aws_ssm_parameter.this["environment"]
 }
