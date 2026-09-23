@@ -4,7 +4,7 @@ Everything genuinely open, grouped by what unblocks it. What's already shipped i
 
 | Area | Item | Blocked on |
 |---|---|---|
-| Terraform | v6 plan diff against real state | AWS credentials |
+| Terraform | v6 plan diff against real state | AWS credentials; proved against MiniStack |
 | Packer | an AMI build against real AWS | AWS credentials |
 | Terraform | simplify the build | the plan diff |
 | Alerting | route burn-rate alerts | 30 days of real telemetry |
@@ -19,7 +19,7 @@ Everything genuinely open, grouped by what unblocks it. What's already shipped i
       --query 'reverse(sort_by(Images,&CreationDate))[:3].[Name,ImageId]' --output table
     ```
 
-- [ ] **Run the v6 provider plan diff against real state.** The tree validates clean, but don't apply three provider majors without a real `terraform plan` first.
+- [ ] **Run the v6 provider plan diff against real state.** The tree validates clean, but don't apply three provider majors without a real `terraform plan` first. Against MiniStack, the tree as it stood before the module-library moves applied 14 of its 17 resources, and the current tree then planned over that state with the KMS key, its alias, the secret and its version moved rather than replaced, and kept their ids through the apply. MiniStack cannot launch the instance, so the instance and the two alarms were never created there. We need more testing against a real account.
 - [ ] **Simplify the Terraform build** (what is left needs the plan diff, so a refactor diffs against a known-good baseline):
     - [x] ~~remove the variables complexities~~. Two unused variables and three unused locals are gone. Safe without the plan diff for a reason that doesn't extend to the rest: **variables and locals are never recorded in state**, so removing one nothing references cannot change a plan. tflint went 9 findings to 4.
     - [ ] collapse the four AWS providers to one default + one aliased reader. **This one does need state.** A provider alias *is* recorded, as the provider address of every resource created through it, so an alias unused in the configuration can still be the address a resource in state is bound to, and the local `terraform.tfstate` can't tell you, because it's empty: the real state is in the S3 backend.
