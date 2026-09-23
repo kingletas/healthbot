@@ -56,20 +56,32 @@ require_local() {
 
 # python3 rather than curl: the emulator image ships neither curl nor wget, so
 # every probe against it in this repository is written this way.
-emulator_answering() {
-    python3 - "$ENDPOINT" <<'PY'
+health_answers() {
+    python3 - "${ENDPOINT}/$1" <<'PY'
 import sys, urllib.request
 try:
-    with urllib.request.urlopen(f"{sys.argv[1]}/_localstack/health", timeout=5) as response:
+    with urllib.request.urlopen(sys.argv[1], timeout=5) as response:
         sys.exit(0 if response.status == 200 else 1)
 except Exception:
     sys.exit(1)
 PY
 }
 
+# Any LocalStack-compatible emulator answers this path.
+emulator_answering() {
+    health_answers _localstack/health
+}
+
+# Only MiniStack answers its own path. The LocalStack community image answers the
+# shared one too, and then fails the prereq seeding with a 501 on the RDS cluster.
 require_up() {
-    emulator_answering && return 0
-    echo "The local AWS emulator is not answering at ${ENDPOINT}." >&2
+    health_answers _ministack/health && return 0
+    if emulator_answering; then
+        echo "Something answers at ${ENDPOINT}, but it is not MiniStack." >&2
+        echo "This tree reads an RDS cluster, and the LocalStack community image does not implement RDS." >&2
+    else
+        echo "The local AWS emulator is not answering at ${ENDPOINT}." >&2
+    fi
     echo "Start MiniStack on that endpoint first: ministackorg/ministack." >&2
     exit 1
 }

@@ -16,6 +16,10 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   deletion window. The policy is written out as the one AWS attaches by default,
   so nobody's access changes. Proved against a local emulator only; we need more
   testing before an apply against a real account.
+- **`make tf-local` refuses an emulator that is not MiniStack.** The LocalStack
+  community image answers the same health path and then fails the seeding with
+  a 501 on the RDS cluster, far from anything naming the emulator. The harness
+  now says which emulator it found before it starts.
 
 ## [0.1.0]: 2026-09-21
 

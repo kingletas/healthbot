@@ -16,13 +16,13 @@ Twenty-four variables are declared with no default, and a plan stops on the firs
 
 `make tf-local` plans this configuration against a local AWS emulator, so you can check it is coherent with no account and no credentials.
 
-Start a LocalStack-compatible emulator listening on `172.17.0.1:4566`, then:
+Start MiniStack listening on `172.17.0.1:4566`, then:
 
 ```bash
 make tf-local
 ```
 
-If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On anything other than Linux you will need to, because `172.17.0.1` is the Docker bridge address and only exists there.
+It has to be MiniStack. This tree reads an RDS cluster, which the LocalStack community image does not implement, so the harness refuses any emulator that does not answer MiniStack's own health path. If yours listens somewhere else, set `HB_LOCAL_AWS_ENDPOINT` to its address. On anything other than Linux you will need to, because `172.17.0.1` is the Docker bridge address and only exists there.
 
 Each run reseeds what the data sources read, plans, and leaves the emulator holding the result. `make tf-local ACTION=apply` applies it and `make tf-local ACTION=clean` destroys it and removes the generated root.
 
