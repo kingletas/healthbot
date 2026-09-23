@@ -9,7 +9,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 - **Vendor tokens no longer reach Terraform state.** The secret is written as a
   write-only value from variables marked `ephemeral`, so neither state nor a
   saved plan holds a token. Upgrading changes the existing secret version in
-  place: its `secret_string` is emptied from state and nothing is replaced.
+  place, emptying its `secret_string` from state, but only while your tfvars
+  still match what the first apply wrote. **If the plan instead shows the
+  secret version being replaced, your tfvars differ from what the first apply
+  wrote, and applying makes them the current secret.** The provider compares
+  the two and forces the replacement; how `ignore_changes = [secret_string]`
+  acts in that case is not proved, and the plan shows which happens.
   **State written before this still holds the first set of tokens**, so rotate
   them once this is applied. Needs Terraform 1.11 or later. Proved against a
   local emulator only; it needs testing in AWS.

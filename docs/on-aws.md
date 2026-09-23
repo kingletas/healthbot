@@ -358,6 +358,13 @@ Manager console.** To push a whole new set from this file instead, raise
 `secret_string_wo_version` in `IT/terraform/main.tf` and apply; nothing is
 written while that number stays the same.
 
+**Upgrading a stack that was seeded before this change:** the plan should show
+the secret version changed in place. If the plan instead shows the secret
+version being replaced, your tfvars differ from what the first apply wrote,
+and applying makes them the current secret. How the module's
+`ignore_changes = [secret_string]` acts in that case is not proved, so read the
+plan before you apply it.
+
 ## Step 8: install the bot
 
 Build the package. It is built fresh each time and never stored in the
