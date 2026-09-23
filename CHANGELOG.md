@@ -34,6 +34,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   key cloud-init writes into `/etc/healthbot.env` has to be rendered from
   `healthbot_env` or refused by the playbook when missing. A key added to the
   first-boot payload without either now fails `make test`.
+- **The two EC2 alarms come from the shared module library.** They keep every
+  setting and change only their `Name` tag. No `moved` block can follow an alarm
+  keyed by a name that carries the environment, so the next apply replaces both.
+  It is the same apply that renames them away from the instance id, so they are
+  replaced once, not twice. Planned against a local emulator only, which cannot
+  launch the instance the alarms watch; we need more testing.
 
 ## [0.1.0]: 2026-09-21
 

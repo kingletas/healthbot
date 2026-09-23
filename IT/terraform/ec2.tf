@@ -79,60 +79,44 @@ resource "aws_instance" "this" {
   )
 }
 
-# An alarm name has to be known at plan time, so it is built from the deployment
-# name; the instance id goes in dimensions, where an unknown value is fine.
-resource "aws_cloudwatch_metric_alarm" "healthbot_status_check_failed" {
-  alarm_name          = format("%sstatus-check", local.prefix)
-  comparison_operator = "GreaterThanThreshold"
-  metric_name         = "StatusCheckFailed"
-  namespace           = "AWS/EC2"
-  alarm_description   = "Status Check Fail"
+# Keyed by the deployment name, which is known at plan time; the instance id
+# goes in dimensions, where an unknown value is fine.
+module "alarms" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm?ref=71e3b4bc696910d279cce526c215208cd9b28c42" # v0.5.0
 
-  evaluation_periods = var.evaluation_period
-  period             = var.statistic_period
-  statistic          = var.statistic
-  threshold          = var.healthbot_status_check_threshold
-  alarm_actions      = var.alarm_actions
-  ok_actions         = var.ok_actions
-
-  datapoints_to_alarm = var.datapoints_to_alarm
-
-  dimensions = {
-    InstanceId = aws_instance.this.id
-
-  }
-  tags = merge(local.tags,
-    {
-      "Name" = format("%s Status check", var.name)
+  alarms = {
+    (format("%sstatus-check", local.prefix)) = {
+      description         = "Status Check Fail"
+      metric_name         = "StatusCheckFailed"
+      namespace           = "AWS/EC2"
+      dimensions          = { InstanceId = aws_instance.this.id }
+      comparison_operator = "GreaterThanThreshold"
+      threshold           = var.healthbot_status_check_threshold
+      evaluation_periods  = var.evaluation_period
+      datapoints_to_alarm = var.datapoints_to_alarm
+      period              = var.statistic_period
+      statistic           = var.statistic
+      alarm_actions       = var.alarm_actions
+      ok_actions          = var.ok_actions
     }
-  )
-}
 
-resource "aws_cloudwatch_metric_alarm" "healthbot_cpu_utilization_too_high" {
-  alarm_name          = format("%scpu-utilization-high", local.prefix)
-  comparison_operator = "GreaterThanThreshold"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  alarm_description   = "CPU utilization too high"
-
-  period        = var.statistic_period
-  statistic     = var.statistic
-  threshold     = var.healthbot_cpu_utilization_too_high
-  alarm_actions = concat(var.alarm_actions, [data.aws_sns_topic.this.arn])
-  ok_actions    = var.ok_actions
-
-  evaluation_periods  = var.healthbot_cpu_utilization_evaluation_period
-  datapoints_to_alarm = var.healthbot_cpu_utilization_datapoints_to_alarm
-
-  dimensions = {
-    InstanceId = aws_instance.this.id
-
-  }
-  tags = merge(local.tags,
-    {
-      "Name" = format("%s Cpu Utilization Too High", var.name)
+    (format("%scpu-utilization-high", local.prefix)) = {
+      description         = "CPU utilization too high"
+      metric_name         = "CPUUtilization"
+      namespace           = "AWS/EC2"
+      dimensions          = { InstanceId = aws_instance.this.id }
+      comparison_operator = "GreaterThanThreshold"
+      threshold           = var.healthbot_cpu_utilization_too_high
+      evaluation_periods  = var.healthbot_cpu_utilization_evaluation_period
+      datapoints_to_alarm = var.healthbot_cpu_utilization_datapoints_to_alarm
+      period              = var.statistic_period
+      statistic           = var.statistic
+      alarm_actions       = concat(var.alarm_actions, [data.aws_sns_topic.this.arn])
+      ok_actions          = var.ok_actions
     }
-  )
+  }
+
+  tags = local.tags
 }
 
 resource "aws_key_pair" "this" {

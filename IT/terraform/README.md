@@ -37,7 +37,7 @@ An apply creates fourteen of the seventeen, and a plan afterwards reports a resi
 | Left over | Why |
 | --- | --- |
 | `aws_instance.this` | The emulator refuses `RunInstances` against an AMI it registered itself, though it reports that AMI as `available` and launches its own built-in images. `CopyImage` is unimplemented, so a self-owned copy of a built-in image is not available either. |
-| both `aws_cloudwatch_metric_alarm` resources | Their dimensions read `aws_instance.this.id`, so they wait on the instance above. |
+| both alarms in `module.alarms` | Their dimensions read `aws_instance.this.id`, so they wait on the instance above. |
 | `aws_key_pair.this` updated in place | The emulator does not persist tags on a key pair, so the same three tags are planned on every run. |
 
 Nothing is worked around in the deployable configuration for any of these, and none of them is a statement about real EC2.
@@ -80,6 +80,7 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
+| <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | 71e3b4bc696910d279cce526c215208cd9b28c42 |
 | <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | 71e3b4bc696910d279cce526c215208cd9b28c42 |
 | <a name="module_secret"></a> [secret](#module\_secret) | github.com/kingletas/terraform-aws-modules//modules/secrets-manager-secret | 71e3b4bc696910d279cce526c215208cd9b28c42 |
 
@@ -87,8 +88,6 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Type |
 | ---- | ---- |
-| [aws_cloudwatch_metric_alarm.healthbot_cpu_utilization_too_high](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
-| [aws_cloudwatch_metric_alarm.healthbot_status_check_failed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_iam_instance_profile.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 | [aws_iam_role.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
