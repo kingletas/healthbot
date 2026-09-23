@@ -240,3 +240,9 @@ variable "sns_name" {
   type        = string
   description = "SNS topic to send notifications to"
 }
+
+variable "kms_admin_arns" {
+  type        = list(string)
+  description = "IAM principals that administer the KMS key besides the role running the deploy. Add every role that will ever deploy this stack, or it cannot change the key."
+  default     = []
+}

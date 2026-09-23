@@ -7,6 +7,11 @@ resource "random_string" "this" {
   min_upper = 2
 }
 
+# The role behind the deploying session, which is what a key policy can name stably.
+data "aws_iam_session_context" "deployer" {
+  arn = data.aws_caller_identity.current.arn
+}
+
 module "kms" {
   source = "github.com/kingletas/terraform-aws-modules//modules/kms-key?ref=5e0ae490c797bb1e8178bea00c41cc9d4c060111" # v0.6.0
 
@@ -15,19 +20,10 @@ module "kms" {
 
   deletion_window_in_days = 15
 
-  # The policy AWS attaches to a key created without one, written out so adopting
-  # the key into the module changes nobody's access. Narrowing it is its own change.
-  policy_json = jsonencode({
-    Version = "2012-10-17"
-    Id      = "key-default-1"
-    Statement = [{
-      Sid       = "Enable IAM User Permissions"
-      Effect    = "Allow"
-      Principal = { AWS = format("arn:%s:iam::%s:root", data.aws_partition.current.partition, data.aws_caller_identity.current.account_id) }
-      Action    = "kms:*"
-      Resource  = "*"
-    }]
-  })
+  # The module builds the policy: whoever runs the deploy administers the key,
+  # and only the instance role may use it. Without an admin the account root would be.
+  admin_arns = distinct(concat(var.kms_admin_arns, [data.aws_iam_session_context.deployer.issuer_arn]))
+  user_arns  = [aws_iam_role.this.arn]
 
   tags = local.tags
 }

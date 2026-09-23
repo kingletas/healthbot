@@ -52,6 +52,13 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 - **The three unused AWS provider aliases are gone.** Nothing referenced them,
   and a plan is unchanged without them. The `profile`, `production_profile` and
   `region` variables they read are still accepted but no longer used.
+- **The KMS key has an explicit policy.** The role running the deploy
+  administers the key, with any others listed in the new optional
+  `kms_admin_arns`, and only the instance role may use it. Before, any IAM
+  principal in the account with a permissive enough policy could. **List every
+  role that will ever deploy this stack in `kms_admin_arns`**, or a later deploy
+  from another role cannot change the key. Proved against a local emulator only;
+  we need more testing.
 
 ## [0.1.0]: 2026-09-21
 

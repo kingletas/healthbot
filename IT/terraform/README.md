@@ -101,6 +101,7 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.allow-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.assume-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_session_context.deployer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_session_context) | data source |
 | [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_rds_cluster.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/rds_cluster) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
@@ -134,6 +135,7 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | AWS Instance type | `string` | `"t2.micro"` | no |
 | <a name="input_iops"></a> [iops](#input\_iops) | EBS throughput | `string` | `100` | no |
 | <a name="input_king_slack_token"></a> [king\_slack\_token](#input\_king\_slack\_token) | Debugging token | `string` | n/a | yes |
+| <a name="input_kms_admin_arns"></a> [kms\_admin\_arns](#input\_kms\_admin\_arns) | IAM principals that administer the KMS key besides the role running the deploy. Add every role that will ever deploy this stack, or it cannot change the key. | `list(string)` | `[]` | no |
 | <a name="input_name"></a> [name](#input\_name) | Name of the application | `string` | n/a | yes |
 | <a name="input_new_relic_api"></a> [new\_relic\_api](#input\_new\_relic\_api) | New Relic API key to get the data | `string` | n/a | yes |
 | <a name="input_ok_actions"></a> [ok\_actions](#input\_ok\_actions) | Actions to perform when the instance is fine | `list(any)` | `[]` | no |
