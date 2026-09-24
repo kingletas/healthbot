@@ -1,5 +1,5 @@
 resource "aws_security_group" "this" {
-  #checkov:skip=CKV2_AWS_5:aws_instance.this attaches the ssh group, and checkov cannot follow a for_each key. Any other key in ingress_map makes a group nothing uses.
+  #checkov:skip=CKV2_AWS_5:module.instance attaches the ssh group, and checkov cannot follow a for_each key. Any other key in ingress_map makes a group nothing uses.
 
   for_each    = var.ingress_map
   description = format("%s %s sg", local.name, each.key)

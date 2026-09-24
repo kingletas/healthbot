@@ -4,6 +4,33 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The instance comes from the shared module library's `ec2-instance`,** at
+  v0.7.0, and a `moved` block carries it across, so the plan updates it in
+  place rather than replacing it. What the plan shows:
+    - The instance is renamed from `<name> EC2 Instance` to `<name>-01`, and
+      its root volume from `<name> EBS` to `<name>-01-root`.
+    - Metadata settings the instance already had by default (a hop limit of
+      1, instance tags off) are now stated.
+    - The zone is no longer pinned to the region's first zone; the subnet
+      decides it, as AWS requires.
+- **A change to the boot configuration now replaces the instance,** because
+  cloud-init reads it only on first boot. The module replaces destroy-first,
+  so HealthBot is down for the time a new instance takes to boot.
+- **The instance output is the public IP address,** or null without one. It
+  was the public DNS name.
+- **A plan stops if the instance's name would match HealthBot's own fleet
+  filter,** `*<APP_ENVIRONMENT_TAG_NAME>*`, which would make it monitor itself.
+  The instance carries the fleet's Environment tag, so only the name kept it
+  out, and that was never checked.
+
+Proved against a local emulator only, and it needs testing in AWS. The
+emulator stores an instance without the subnet, encryption and public-IP
+settings it was asked for, so the current configuration plans a replacement
+there too. The refactor adds no forcing change beyond that drift, and makes the
+same planned change on both.
+
 ## [0.2.0]: 2026-09-23
 
 ### Fixed

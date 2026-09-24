@@ -32,63 +32,45 @@ moved {
   to   = module.role.aws_iam_instance_profile.this[0]
 }
 
-resource "aws_instance" "this" {
-  ami                  = data.aws_ami.this.id
+# One instance, keyed "01" inside the module, so the moved block below is the
+# same literal in every environment. The subnet decides the zone.
+module "instance" {
+  source = "github.com/kingletas/terraform-aws-modules//modules/ec2-instance?ref=af6f00f1646e1e99e635df03b09f9753da8fe59d" # v0.7.0
+
+  name                 = var.name
+  ami_id               = data.aws_ami.this.id
   instance_type        = var.instance_type
-  iam_instance_profile = module.role.instance_profile_name
+  subnet_ids           = [data.aws_subnet.this.id]
+  security_group_ids   = [aws_security_group.this["ssh"].id]
   key_name             = aws_key_pair.this.key_name
+  iam_instance_profile = module.role.instance_profile_name
 
-  vpc_security_group_ids      = [aws_security_group.this["ssh"].id]
-  subnet_id                   = data.aws_subnet.this.id
   associate_public_ip_address = var.associate_public_ip_address
-
-  availability_zone = data.aws_availability_zones.this.names[0]
+  # Not applicable to the smallish instances.
+  ebs_optimized = var.ebs_enabled
+  monitoring    = true
 
   user_data = data.cloudinit_config.this.rendered
 
-  //not applicable to the smallish instances
-  ebs_optimized = var.ebs_enabled
-
-  monitoring = true
-  metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
-
-  root_block_device {
-    volume_type           = var.volume_type
-    volume_size           = var.volume_size
+  root_volume = {
+    type                  = var.volume_type
+    size                  = var.volume_size
+    iops                  = var.iops
     delete_on_termination = var.delete_on_termination
-    # gp2 takes no provisioned iops: the v3 provider tolerated iops = 0 here,
-    # later majors reject it at plan time; null omits the argument entirely
-    iops      = (var.volume_type == "gp2" ? null : var.iops)
-    encrypted = true
-
-    kms_key_id = module.kms.key_id
-
-    tags = merge(local.tags,
-      {
-        "Name" = format("%s EBS", var.name)
-      }
-    )
   }
+  kms_key_id = module.kms.key_id
 
-  lifecycle {
-    create_before_destroy = true
+  tags = local.tags
+}
 
-    # A payload cloud-init cannot read boots a machine with no environment
-    # file, and nothing on the instance reports that.
-    precondition {
-      condition     = strcontains(local.boot_payload, "#cloud-config") && strcontains(local.boot_payload, local.etc_env_file)
-      error_message = "The user_data payload does not decode to a cloud-config that writes ${local.etc_env_file}, so a fresh instance would come up without its environment file. Check data.cloudinit_config.this: this assertion reads an uncompressed payload, so gzip has to stay off for it to hold."
-    }
-  }
+moved {
+  from = aws_instance.this
+  to   = module.instance.aws_instance.this["01"]
+}
 
-  tags = merge(local.tags,
-    {
-      "Name" = format("%s EC2 Instance", var.name)
-    }
-  )
+locals {
+  instance_name = format("%s-01", var.name)
+  instance_id   = module.instance.instance_ids[local.instance_name]
 }
 
 # Keyed by the deployment name, which is known at plan time; the instance id
@@ -101,7 +83,7 @@ module "alarms" {
       description         = "Status Check Fail"
       metric_name         = "StatusCheckFailed"
       namespace           = "AWS/EC2"
-      dimensions          = { InstanceId = aws_instance.this.id }
+      dimensions          = { InstanceId = local.instance_id }
       comparison_operator = "GreaterThanThreshold"
       threshold           = var.healthbot_status_check_threshold
       evaluation_periods  = var.evaluation_period
@@ -116,7 +98,7 @@ module "alarms" {
       description         = "CPU utilization too high"
       metric_name         = "CPUUtilization"
       namespace           = "AWS/EC2"
-      dimensions          = { InstanceId = aws_instance.this.id }
+      dimensions          = { InstanceId = local.instance_id }
       comparison_operator = "GreaterThanThreshold"
       threshold           = var.healthbot_cpu_utilization_too_high
       evaluation_periods  = var.healthbot_cpu_utilization_evaluation_period

@@ -81,6 +81,7 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | Name | Source | Version |
 | ---- | ------ | ------- |
 | <a name="module_alarms"></a> [alarms](#module\_alarms) | github.com/kingletas/terraform-aws-modules//modules/cloudwatch-alarm | af6f00f1646e1e99e635df03b09f9753da8fe59d |
+| <a name="module_instance"></a> [instance](#module\_instance) | github.com/kingletas/terraform-aws-modules//modules/ec2-instance | af6f00f1646e1e99e635df03b09f9753da8fe59d |
 | <a name="module_kms"></a> [kms](#module\_kms) | github.com/kingletas/terraform-aws-modules//modules/kms-key | af6f00f1646e1e99e635df03b09f9753da8fe59d |
 | <a name="module_parameters"></a> [parameters](#module\_parameters) | github.com/kingletas/terraform-aws-modules//modules/ssm-parameter | af6f00f1646e1e99e635df03b09f9753da8fe59d |
 | <a name="module_role"></a> [role](#module\_role) | github.com/kingletas/terraform-aws-modules//modules/iam-role | af6f00f1646e1e99e635df03b09f9753da8fe59d |
@@ -91,12 +92,10 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 | Name | Type |
 | ---- | ---- |
 | [aws_iam_role_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
-| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_key_pair.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/key_pair) | resource |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
 | [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
-| [aws_availability_zones.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.allow-policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_session_context.deployer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_session_context) | data source |
@@ -162,5 +161,5 @@ terraform graph -type=plan | dot -Tpng -o graph.png
 
 | Name | Description |
 | ---- | ----------- |
-| <a name="output_ec2-healthbot-instance"></a> [ec2-healthbot-instance](#output\_ec2-healthbot-instance) | n/a |
+| <a name="output_ec2-healthbot-instance"></a> [ec2-healthbot-instance](#output\_ec2-healthbot-instance) | The instance's public IP address, or null when it has none. |
 <!-- END_TF_DOCS -->

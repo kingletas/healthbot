@@ -27,10 +27,6 @@ data "aws_subnet" "this" {
   id = var.subnet_id
 }
 
-data "aws_availability_zones" "this" {
-  state = "available"
-}
-
 data "aws_rds_cluster" "this" {
   cluster_identifier = var.db_cluster_identifier
 }
