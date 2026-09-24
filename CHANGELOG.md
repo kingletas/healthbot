@@ -25,11 +25,10 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
   The instance carries the fleet's Environment tag, so only the name kept it
   out, and that was never checked.
 
-Proved against a local emulator only, and it needs testing in AWS. The
-emulator stores an instance without the subnet, encryption and public-IP
-settings it was asked for, so the current configuration plans a replacement
-there too. The refactor adds no forcing change beyond that drift, and makes the
-same planned change on both.
+Proved against a local emulator; we need more testing. The emulator stores an
+instance without the subnet, encryption and public-IP settings it was asked
+for, so the current configuration plans a replacement there too. The refactor
+adds no forcing change beyond that drift.
 
 ## [0.2.0]: 2026-09-23
 
