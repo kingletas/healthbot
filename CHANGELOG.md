@@ -4,6 +4,25 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ## [Unreleased]
 
+### Added
+
+- **A host-pressure SLO, two alerts, and a Slack bridge**. Any
+  exporter that speaks the interface `IT/observability/prometheus/rules/host-pressure.yml`
+  documents (`host_psi_pct`, `host_mem_available_pct`, `host_load1`,
+  `host_cpu_count`, `host_pressure_level`) can drive the memory-pressure SLO
+  and its two alerts, `HostMemoryPressureHigh` and `HostPressureExporterSilent`.
+  Alertmanager is now part of the observability stack, capped and on
+  loopback like the rest, and routes only those two alerts anywhere -- every
+  other alert stays on a null receiver until its own thresholds are
+  backtested. `healthbot-alertmanager-bridge` is the delivery: a native
+  systemd service that turns Alertmanager's webhook into one Slack message
+  per group through `SlackNotifier`, reading its token and channel the same
+  way a real `healthbot` run does.
+- **Every container in `IT/observability` is capped** (`mem_limit`/`cpus`
+  per service), and the compose project is named explicitly
+  (`healthbot-observability`), so a host running more than one stack can
+  scope `docker ps`/`down` to just this one.
+
 ### Changed
 
 - **The instance comes from the shared module library's `ec2-instance`,** at

@@ -51,7 +51,7 @@ from healthbot.aws.parameter_store import ParameterStore
 from healthbot.aws.secrets_manager import SecretsManager
 from healthbot.config_files import get_config
 from healthbot.errors import ConfigurationError
-from healthbot.logs import logger
+from healthbot.logs import add_file_sink, logger
 from healthbot.notifications.base import Message
 from healthbot.notifications.slack import SlackNotifier, mrkdwn
 from healthbot.settings import get_settings
@@ -137,6 +137,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             return
 
+        # Alertmanager's own webhook always carries at least one alert in a
+        # group; a payload with none is not a real notification to post, and
+        # posting "no alerts in this group" to Slack would be a signal firing
+        # on an event that carries no information. Refuse it the same way a
+        # malformed body is refused, before spending a Secrets Manager round
+        # trip on it.
+        if not isinstance(payload, dict) or not payload.get("alerts"):
+            self.send_response(400)
+            self.end_headers()
+            return
+
         credentials = read_slack_credentials()
         if credentials is None:
             # Alertmanager retries a non-2xx, so the alert is not lost -- it
@@ -160,6 +171,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 def main() -> int:
+    add_file_sink()
     with socketserver.TCPServer((HOST, PORT), Handler) as httpd:
         logger.info(f"alertmanager bridge listening on {HOST}:{PORT}")
         httpd.serve_forever()
