@@ -1,0 +1,80 @@
+---
+# A host's own headroom target, from whatever exporter on that host reports
+# it: memory PSI "some avg60" under 10% for 99% of minutes. Any exporter that
+# speaks this contract can drive these rules -- one sample as one gauge point
+# per minute of wall-clock time is what "for 99% of minutes" assumes, which
+# only holds when the exporter samples on a regular cadence -- see
+# HostPressureExporterSilent, which is what tells "quiet" from "not
+# reporting" when it does not.
+#
+# The interface: host_psi_pct{signal="mem_some_avg60"} (and seven sibling
+# signals -- some/full for memory, cpu and io), host_mem_available_pct,
+# host_load1, host_cpu_count, host_pressure_level (0/1/2, the exporter's own
+# heartbeat, present on every sample regardless of level), all as OTLP
+# gauges with no "unit" field (the collector's Prometheus exporter turns a
+# declared unit into a name suffix), resource service.name
+# "host-pressure-exporter".
+groups:
+    - name: host-pressure-slo-recording
+      interval: 30s
+      rules:
+          - record: host:psi_mem_some_avg60_under_target:sample
+            expr: host_psi_pct{signal="mem_some_avg60"} < bool 10
+
+          # The SLO itself, as a rolling compliance ratio over the window the
+          # target is measured against (a month). This is what the Grafana
+          # panel shows; it is not what the alert below fires on -- a 30-day
+          # ratio barely moves during a short capped-load test, so it cannot
+          # be the thing that pages promptly. See the alert's own comment.
+          - record: host:psi_mem_some_avg60_compliance:ratio_30d
+            expr: avg_over_time(host:psi_mem_some_avg60_under_target:sample[30d])
+
+    - name: host-pressure-alerts
+      rules:
+          # Fires on the instantaneous signal directly, confirmed by `for`,
+          # rather than on the 30-day compliance ratio: the ratio is what the
+          # SLO reports, but a slow-moving 30-day average is the wrong thing
+          # to page on, and it is not provable inside a single capped-load
+          # test. `for: 5m` is hysteresis -- a brief spike should not reach
+          # whoever this is routed to.
+          - alert: HostMemoryPressureHigh
+            expr: host_psi_pct{signal="mem_some_avg60"} >= 10
+            for: 5m
+            labels:
+                severity: ticket
+            annotations:
+                summary: "Memory pressure (PSI some avg60) at or above the 10% headroom target"
+                description: >-
+                    host_psi_pct{signal="mem_some_avg60"} has held at or
+                    above 10% for 5 minutes. This is the signal, not the
+                    response -- whatever exports it only ever reports.
+
+          # The dead-man's switch for the exporter's own reporting, shaped
+          # like HealthBotSilent in slo.yml: absence rather than a rate,
+          # because a rate over a series that no longer exists is empty, not
+          # zero, and a rate-shaped expression is exactly the one that
+          # cannot fire. host_pressure_level is exported on every sample
+          # regardless of level, which is what makes it a heartbeat rather
+          # than a signal that is legitimately silent while healthy.
+          #
+          # The otel-collector's prometheus exporter drops a series
+          # metric_expiration (10m, ../otel-collector.yaml) after its last
+          # update, so this waits longer than that before trusting the
+          # absence: 11m of absent_over_time, then a further 2m of `for`.
+          # Worst case this speaks about 13 minutes after the exporter
+          # actually stopped -- correctness over speed, the same trade
+          # HealthBotSilent makes.
+          - alert: HostPressureExporterSilent
+            expr: absent_over_time(host_pressure_level[11m])
+            for: 2m
+            labels:
+                severity: page
+            annotations:
+                summary: "The host-pressure exporter has stopped reporting"
+                description: >-
+                    No sample has reached the collector in at least 13
+                    minutes: the exporter is down, its export is failing, or
+                    the collector itself is unreachable. Silence on the
+                    dashboard otherwise reads as a calm host, which is
+                    exactly wrong here -- this is the alert that fires when
+                    the pressure alert cannot.

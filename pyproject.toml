@@ -34,6 +34,7 @@ healthbot = "healthbot.healthbot:main"
 healthbot-dora = "healthbot.dora:main"
 healthbot-demo = "healthbot.demo:main"
 healthbot-local = "healthbot.local_env:main"
+healthbot-alertmanager-bridge = "healthbot.notifications.alertmanager_bridge:main"
 
 [build-system]
 requires = ["hatchling"]

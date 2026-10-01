@@ -1,0 +1,41 @@
+---
+# Who gets told, and how often. The Prometheus rules (../prometheus/rules/)
+# only decide what is wrong; this decides whether anybody needs telling
+# again -- group_interval and repeat_interval are the "backs off a standing
+# alert, speaks on a change" behaviour, native to Alertmanager rather than
+# reimplemented here.
+#
+# Only the two host-pressure alerts (../prometheus/rules/host-pressure.yml)
+# are routed anywhere. Every other alert -- which today means HealthBot's own
+# burn-rate and dead-man's switch rules in ../prometheus/rules/slo.yml --
+# falls through to the null receiver on purpose: todos.md already says
+# routing those is blocked on 30 days of real telemetry to backtest the
+# thresholds against, and adding Alertmanager to this stack must not
+# silently start paging on unproven numbers. Widen the route when that
+# backtest is done.
+
+route:
+    receiver: "null"
+    group_by: ["alertname"]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+        - matchers:
+              - alertname=~"HostMemoryPressureHigh|HostPressureExporterSilent"
+          receiver: host-pressure-slack
+          continue: false
+
+receivers:
+    - name: "null"
+    - name: host-pressure-slack
+      webhook_configs:
+          # The bridge is deliberately not a container: it needs $SECRETS-free
+          # access to the same Parameter Store/Secrets Manager path a real
+          # healthbot run uses, and runs as a native systemd --user service
+          # on the host (see ../alertmanager-bridge/). 172.17.0.1 is the
+          # docker bridge address, reachable from this container and from
+          # the host, not from the LAN -- see healthbot/notifications/
+          # alertmanager_bridge.py's own header for the rest of the design.
+          - url: http://172.17.0.1:9095/alert
+            send_resolved: true

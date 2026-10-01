@@ -1,0 +1,46 @@
+[Unit]
+# Alertmanager -> Slack, through healthbot-alertmanager-bridge (healthbot/
+# notifications/alertmanager_bridge.py). Native, not a container: it needs
+# the same Parameter Store / Secrets Manager path a real healthbot run uses,
+# and adding a container just to reach a container-reachable loopback address
+# would be one more thing between an alert and Slack for no benefit.
+#
+# Installed by hand today; folding it into a real deploy unit is the job of
+# a host playbook, which does not exist yet.
+Description=Alertmanager webhook -> Slack bridge, through HealthBot's own sender
+Documentation=file:%h/Development/healthbot/healthbot/notifications/alertmanager_bridge.py
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Development/healthbot
+
+# Dummy credentials against MiniStack, same convention as healthbot-local
+# (never real AWS -- see healthbot/local_env.py's require_local()). Adjust
+# AWS_ENDPOINT_URL if MiniStack is not on the default docker bridge address
+# on this host.
+Environment=AWS_ENDPOINT_URL=http://172.17.0.1:4566
+Environment=AWS_ACCESS_KEY_ID=test
+Environment=AWS_SECRET_ACCESS_KEY=test
+Environment=AWS_DEFAULT_REGION=us-east-1
+Environment=HB_ALERT_BRIDGE_HOST=172.17.0.1
+Environment=HB_ALERT_BRIDGE_PORT=9095
+
+# Adjust the path to `uv` if it is not on ~/.local/bin on this host (`which uv`).
+ExecStart=%h/.local/bin/uv run healthbot-alertmanager-bridge
+Restart=always
+RestartSec=10
+
+Nice=5
+MemoryMax=128M
+CPUQuota=10%
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=%h/Development/healthbot
+PrivateTmp=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=default.target

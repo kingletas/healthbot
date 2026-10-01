@@ -7,20 +7,36 @@
 #
 # Grafana: http://localhost:3000 (anonymous admin, local only)
 # Prometheus: http://localhost:9090
+#
+# Named explicitly (rather than left to default to the directory name) so a
+# host running several compose stacks can filter docker ps/logs/down to just
+# this one: `docker compose -p healthbot-observability ...`, or
+# `docker ps --filter label=com.docker.compose.project=healthbot-observability`.
+name: healthbot-observability
+
 services:
     otel-collector:
         image: otel/opentelemetry-collector-contrib:0.115.1
         command: ["--config=/etc/otelcol/config.yaml"]
         volumes:
             - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
-        # Every port here binds to loopback. This is a stack for one laptop:
-        # the only thing outside a container that needs these is the bot and a
-        # browser on this machine, and containers reach each other by service
-        # name on the compose network rather than through a published port.
+        # Every port here binds to loopback. This is a stack for one laptop
+        # (or on a second host, reached from the laptop over ssh -L):
+        # the only thing outside a container that needs these is the bot and
+        # a browser on this machine, and containers reach each other by
+        # service name on the compose network rather than through a
+        # published port.
         ports:
             - "127.0.0.1:4317:4317" # OTLP gRPC
             - "127.0.0.1:4318:4318" # OTLP HTTP
             - "127.0.0.1:8889:8889" # Prometheus exposition, scraped by prometheus
+        # Caps are deliberately generous relative to what this container
+        # actually uses (a few tens of MB): it is on the path of every
+        # sample a host-pressure exporter sends, so it must never itself
+        # become the reason a sample is dropped.
+        mem_limit: 128m
+        mem_reservation: 64m
+        cpus: 0.25
 
     prometheus:
         image: prom/prometheus:v3.1.0
@@ -33,6 +49,12 @@ services:
             - prometheus-data:/prometheus
         ports:
             - "127.0.0.1:9090:9090"
+        # The TSDB is the heaviest thing in this stack; 384M is comfortable
+        # for 15d retention at this scrape volume and still well under the
+        # host's own limits.
+        mem_limit: 384m
+        mem_reservation: 128m
+        cpus: 0.5
 
     grafana:
         image: grafana/grafana:11.4.0
@@ -48,6 +70,9 @@ services:
             - "127.0.0.1:3000:3000"
         depends_on:
             - prometheus
+        mem_limit: 256m
+        mem_reservation: 128m
+        cpus: 0.25
 
     # The bot's own cache; not used by the demo but present so a real run
     # against this stack has everything it needs.
@@ -58,6 +83,26 @@ services:
         # on the network could write a suppression and silence a real outage.
         ports:
             - "127.0.0.1:6379:6379"
+        mem_limit: 64m
+        mem_reservation: 32m
+        cpus: 0.1
+
+    # Alertmanager owns *who* gets told and how often (grouping, the standing
+    # alert's backoff via group_interval/repeat_interval); the Prometheus
+    # rules only own *what* is wrong. Only the two host-pressure alerts are
+    # routed anywhere right now -- see alertmanager/alertmanager.yml's
+    # comment on why HealthBot's own SLO alerts stay on the null receiver.
+    alertmanager:
+        image: prom/alertmanager:v0.28.0
+        command:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+        volumes:
+            - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+        ports:
+            - "127.0.0.1:9093:9093"
+        mem_limit: 64m
+        mem_reservation: 32m
+        cpus: 0.1
 
 volumes:
     prometheus-data:

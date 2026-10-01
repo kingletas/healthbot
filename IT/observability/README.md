@@ -3,14 +3,32 @@
 OTLP in, Grafana out: the bot (or the synthetic demo) emits OpenTelemetry to the collector, the collector exposes Prometheus metrics, Prometheus computes SLO burn rates and alerts, Grafana shows the provisioned dashboards.
 
 ```text
-healthbot / healthbot-demo / healthbot-dora
+healthbot / healthbot-demo / healthbot-dora / a host-pressure exporter
         │ OTLP http :4318
         ▼
 otel-collector ──:8889──> prometheus (rules: burn rates, compliance, dead-man)
-                               │
-                               ▼
-                           grafana :3000  (HealthBot SRE · HealthBot DORA)
+                               │                    │
+                               ▼                    ▼ (the two host-pressure
+                           grafana :3000        alertmanager :9093   alerts only)
+                       (HealthBot SRE · DORA ·       │
+                        Host Pressure)                ▼
+                                          alertmanager-bridge :9095 (native,
+                                          not a container -- see below)
+                                                       │
+                                                       ▼
+                                                     Slack
 ```
+
+**A host-pressure exporter** is a second kind of producer into this
+same collector, alongside the bot: something running on the host being
+watched posts one OTLP/HTTP JSON metrics request per sample, on the
+interface `prometheus/rules/host-pressure.yml` documents in its own header
+(`host_psi_pct`, `host_mem_available_pct`, `host_load1`, `host_cpu_count`,
+`host_pressure_level`, resource `service.name` "host-pressure-exporter").
+That file carries the SLO (memory PSI `some avg60` under 10% for 99% of
+minutes) and its two alerts; `grafana/dashboards/host-pressure.json` is its
+panel. Nothing here assumes a particular exporter -- any process that speaks
+the interface drives these rules.
 
 ## Run it
 
@@ -53,6 +71,38 @@ healthbot-dora record resolve
 Objectives live in `healthbot/config/slo.yml` and are emitted as the `healthbot_slo_target` gauge, so the Prometheus rules never hardcode a target. Burn-rate alerting is multi-window multi-burn-rate (SRE Workbook §5.5): **page** at 14.4× (1h + 5m), **ticket** at 6× (6h + 30m), plus `HealthBotSilent`, the dead-man's switch, when the heartbeat stops.
 
 > The burn thresholds are conventions, not measurements. Nothing here has been backtested against real traffic, so a threshold that looks right may fire constantly or never at all, and neither is visible until it happens. Collect real data first, replay it against these numbers, and move them before routing any of this to a person.
+
+## Alertmanager and the Slack bridge
+
+Alertmanager owns *who* gets told and how often -- `alertmanager/alertmanager.yml`'s
+`group_interval`/`repeat_interval` back off a standing alert and speak on a
+change, natively, rather than reimplementing `healthbot/alerting.py`'s
+`AlertGate` for rule-based alerts. **Only the two host-pressure alerts are
+routed anywhere.** HealthBot's own burn-rate and dead-man's-switch rules
+(`prometheus/rules/slo.yml`) fall through to a null receiver on purpose:
+`todos.md` already says routing those is blocked on 30 days of real
+telemetry to backtest the thresholds against, and this stack must not start
+paging on unproven numbers as a side effect of Alertmanager existing.
+
+The Slack delivery itself is `healthbot-alertmanager-bridge`
+(`healthbot/notifications/alertmanager_bridge.py`): Alertmanager's webhook
+receiver posts each firing/resolved group to it, and it sends one Slack
+message per group through `SlackNotifier` -- the same client class a real
+`healthbot` run uses. It reads `slack_token`/`slack_channel` the same way
+`healthbot.py`'s own main flow does (Parameter Store's `secret_name` pointer,
+then Secrets Manager), so there is exactly one place the estate manages that
+credential. **It is deliberately not a container**: it needs the AWS
+endpoint and credentials a real run needs, and runs as its own native
+systemd user service (`alertmanager-bridge/healthbot-alertmanager-bridge.service`)
+bound to the docker bridge address (`172.17.0.1`, reachable from the
+`alertmanager` container and the host, not the LAN) so Alertmanager can reach
+it without another container in the path.
+
+Locally, point it at `IT/local`'s Mattermost stand-in the same way a real
+bot run does: `HB_SLACK_API_URL=http://localhost:8081/slack/` plus the AWS
+env `healthbot-local run-env` prints, and `uv run healthbot-local seed` has
+already seeded `slack_token`/`slack_channel` (`town-square`) under the
+`healthbot-local` secret name for you.
 
 ## Gotchas
 
