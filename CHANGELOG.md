@@ -49,6 +49,13 @@ instance without the subnet, encryption and public-IP settings it was asked
 for, so the current configuration plans a replacement there too. The refactor
 adds no forcing change beyond that drift.
 
+### Fixed
+
+- **`healthbot-demo` starts on a host with no `git` installed.** It falls
+  back to invented history as it says it does, instead of exiting at start.
+  The DORA lead time on such a host logs that it cannot resolve a commit's
+  time and leaves it out, instead of raising.
+
 ## [0.2.0]: 2026-09-23
 
 ### Fixed

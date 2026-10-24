@@ -102,7 +102,8 @@ def recent_shas(repo: str, count: int = 20) -> list:
             check=True,
         )
         return [line.split() for line in out.stdout.strip().splitlines()]
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, OSError):
+        # OSError: no git installed, so the seed falls back to invented history.
         return []
 
 

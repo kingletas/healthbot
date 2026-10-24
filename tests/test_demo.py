@@ -40,3 +40,12 @@ def test_seeding_guarantees_every_dora_panel_has_data(monkeypatch, tmp_path):
 
     # Second seed is a no-op, since the journal already has history
     assert demo.seed_dora_journal(random.Random(4), repo=repo) == 0
+
+
+def test_seeding_falls_back_to_invented_history_when_git_is_not_installed(monkeypatch, tmp_path):
+    monkeypatch.setenv("HB_DORA_EVENTS", str(tmp_path / "events.jsonl"))
+    no_git = tmp_path / "bin"
+    no_git.mkdir()
+    monkeypatch.setenv("PATH", str(no_git))
+    assert demo.recent_shas(str(REPO_ROOT)) == []
+    assert demo.seed_dora_journal(random.Random(4), repo=str(REPO_ROOT)) > 0

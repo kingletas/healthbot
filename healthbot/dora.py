@@ -81,7 +81,7 @@ def commit_time(sha: str, repo: str | None = None) -> datetime | None:
             check=True,
         )
         return datetime.fromisoformat(out.stdout.strip())
-    except (subprocess.CalledProcessError, ValueError):
+    except (subprocess.CalledProcessError, OSError, ValueError):
         logger.error(f"cannot resolve commit time for {sha!r} in {repo!r}")
         return None
 
