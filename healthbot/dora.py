@@ -81,9 +81,23 @@ def commit_time(sha: str, repo: str | None = None) -> datetime | None:
             check=True,
         )
         return datetime.fromisoformat(out.stdout.strip())
-    except (subprocess.CalledProcessError, OSError, ValueError):
+    except OSError:
+        _say_git_is_missing()
+        return None
+    except (subprocess.CalledProcessError, ValueError):
         logger.error(f"cannot resolve commit time for {sha!r} in {repo!r}")
         return None
+
+
+_git_missing_said = False
+
+
+def _say_git_is_missing() -> None:
+    """Say once per process that git is not installed, rather than once per deploy read."""
+    global _git_missing_said
+    if not _git_missing_said:
+        _git_missing_said = True
+        logger.warning("git is not installed, so DORA lead time is left out")
 
 
 def compute_metrics(events: list, window_days: int, repo: str | None = None) -> dict:

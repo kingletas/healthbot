@@ -55,6 +55,11 @@ adds no forcing change beyond that drift.
   back to invented history as it says it does, instead of exiting at start.
   The DORA lead time on such a host logs that it cannot resolve a commit's
   time and leaves it out, instead of raising.
+- **A host with no `git` says so, once.** The demo says its DORA history is
+  invented because `git` is missing, and the DORA lead time says once per
+  process that `git` is not installed, instead of an error per deploy that
+  read the same as a bad commit. A bad commit with `git` present still gets
+  its own line.
 
 ## [0.2.0]: 2026-09-23
 

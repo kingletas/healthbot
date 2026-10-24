@@ -102,8 +102,12 @@ def recent_shas(repo: str, count: int = 20) -> list:
             check=True,
         )
         return [line.split() for line in out.stdout.strip().splitlines()]
-    except (subprocess.CalledProcessError, OSError):
-        # OSError: no git installed, so the seed falls back to invented history.
+    except OSError:
+        logger.warning(
+            "git is not installed, so the demo's DORA history is invented: no commits, no lead time"
+        )
+        return []
+    except subprocess.CalledProcessError:
         return []
 
 
