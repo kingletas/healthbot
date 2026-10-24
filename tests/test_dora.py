@@ -94,3 +94,10 @@ def test_lead_time_joins_deploys_to_real_commits(monkeypatch, tmp_path):
 
 def test_empty_journal_reports_no_data_not_zeroes():
     assert dora.compute_metrics([], window_days=30) == {}
+
+
+def test_commit_time_is_none_when_git_is_not_installed(monkeypatch, tmp_path):
+    no_git = tmp_path / "bin"
+    no_git.mkdir()
+    monkeypatch.setenv("PATH", str(no_git))
+    assert dora.commit_time("abc123", repo=str(tmp_path)) is None
