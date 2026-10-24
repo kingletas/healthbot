@@ -2,6 +2,7 @@
 
 import json
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from healthbot import dora
 
@@ -101,3 +102,39 @@ def test_commit_time_is_none_when_git_is_not_installed(monkeypatch, tmp_path):
     no_git.mkdir()
     monkeypatch.setenv("PATH", str(no_git))
     assert dora.commit_time("abc123", repo=str(tmp_path)) is None
+
+
+def _said(level="WARNING"):
+    from healthbot.logs import logger
+
+    lines = []
+    return lines, logger.add(lambda message: lines.append(message.record["message"]), level=level)
+
+
+def test_a_host_with_no_git_says_so_once_and_not_as_a_bad_commit(monkeypatch, tmp_path):
+    from healthbot.logs import logger
+
+    no_git = tmp_path / "bin"
+    no_git.mkdir()
+    monkeypatch.setenv("PATH", str(no_git))
+    monkeypatch.setattr(dora, "_git_missing_said", False)
+    lines, sink = _said()
+    try:
+        for sha in ("abc123", "def456", "abc789"):
+            assert dora.commit_time(sha, repo=str(tmp_path)) is None
+    finally:
+        logger.remove(sink)
+    assert lines == ["git is not installed, so DORA lead time is left out"]
+
+
+def test_a_bad_commit_with_git_present_still_names_the_commit(monkeypatch, tmp_path):
+    from healthbot.logs import logger
+
+    monkeypatch.setattr(dora, "_git_missing_said", False, raising=False)
+    lines, sink = _said()
+    try:
+        assert dora.commit_time("0" * 40, repo=str(Path(__file__).resolve().parents[1])) is None
+    finally:
+        logger.remove(sink)
+    assert any("cannot resolve commit time for" in line for line in lines)
+    assert not any("git is not installed" in line for line in lines)

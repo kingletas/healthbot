@@ -49,3 +49,20 @@ def test_seeding_falls_back_to_invented_history_when_git_is_not_installed(monkey
     monkeypatch.setenv("PATH", str(no_git))
     assert demo.recent_shas(str(REPO_ROOT)) == []
     assert demo.seed_dora_journal(random.Random(4), repo=str(REPO_ROOT)) > 0
+
+
+def test_the_demo_says_its_history_is_invented_when_git_is_not_installed(monkeypatch, tmp_path):
+    from healthbot.logs import logger
+
+    no_git = tmp_path / "bin"
+    no_git.mkdir()
+    monkeypatch.setenv("PATH", str(no_git))
+    lines = []
+    sink = logger.add(lambda message: lines.append(message.record["message"]), level="WARNING")
+    try:
+        assert demo.recent_shas(str(REPO_ROOT)) == []
+    finally:
+        logger.remove(sink)
+    assert lines == [
+        "git is not installed, so the demo's DORA history is invented: no commits, no lead time"
+    ]
