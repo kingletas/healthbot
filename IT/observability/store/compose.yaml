@@ -44,8 +44,8 @@ services:
         restart: unless-stopped
 
     # varnishstat reads Varnish's shared memory, so this one mounts the store's varnish-vsm volume
-    # read-only and needs no network to the store at all. That memory also holds Varnish's request log;
-    # this container only ever runs varnishstat, but anything else given the volume could read headers.
+    # read-only and needs no network to the store at all. That memory also holds Varnish's request log,
+    # which carries headers, cookies among them, unless the store's Varnish masks them with vsl_mask.
     varnish-exporter:
         build:
             context: ./varnish-exporter
