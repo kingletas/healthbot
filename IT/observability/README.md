@@ -104,6 +104,24 @@ env `healthbot-local run-env` prints, and `uv run healthbot-local seed` has
 already seeded `slack_token`/`slack_channel` (`town-square`) under the
 `healthbot-local` secret name for you.
 
+## A store's own services
+
+`store/` watches one store's services from beside it: MariaDB, both Valkeys, RabbitMQ, OpenSearch, PHP-FPM, nginx and Varnish, each with a dashboard in the **HealthBot** folder (`Store: ...`). Run with it, Prometheus joins the store's Docker network and scrapes there. Nothing in `store/` publishes a port.
+
+```bash
+cd store && cp .env.example .env && docker compose up -d
+```
+
+```bash
+STORE_PROJECT=kapelos-shop docker compose -f docker-compose.yml -f store/observability.yaml up -d
+```
+
+- **What each service needs from the store.** PHP-FPM serves its own pool status as OpenMetrics and RabbitMQ its own metrics on 15692, so neither has an exporter here. Both nginx's and FPM's status are on nginx's internal port 8081, where nothing routes, and FPM's is asked with fixed parameters only, because a container holding PHP-FPM's socket could run any PHP as the store. MariaDB is read with a login that sees the server's status and none of the store's tables. Varnish is read from its shared memory, mounted read-only. A Kapelos store has all of this; another store needs the same before these exporters can read it.
+- **The OpenSearch exporter starts only with `--profile opensearch`.** It is elasticsearch_exporter, and has not yet been proved against OpenSearch.
+- **The Varnish exporter is built on the store's own Varnish image**, so `varnishstat` reads the shared memory in the format that wrote it. The build downloads the exporter and refuses to without its published checksum in `VARNISH_EXPORTER_SHA256`. Varnish's shared memory also holds its request log, which carries every header, cookies included, unless the store's Varnish masks the header tags with `vsl_mask`. A Kapelos store does; give the volume to no store's exporter until its Varnish does too.
+- **`store/scrape.yml` labels every job `site: shop`.** A second store is a second scrape file with its own label, and the dashboards choose between sites with their `site` variable.
+- **`store/site.example.yml` is the HealthBot site file for `healthbot-site`.** Copy it outside this repository and put the store's real address there.
+
 ## Gotchas
 
 - **Grafana is wide open** (`GF_AUTH_ANONYMOUS_ORG_ROLE=Admin`). Local convenience only; never reuse this compose file anywhere shared.

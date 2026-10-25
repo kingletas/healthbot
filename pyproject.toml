@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 healthbot = "healthbot.healthbot:main"
+healthbot-site = "healthbot.site_run:main"
 healthbot-dora = "healthbot.dora:main"
 healthbot-demo = "healthbot.demo:main"
 healthbot-local = "healthbot.local_env:main"

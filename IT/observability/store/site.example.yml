@@ -1,0 +1,10 @@
+# A HealthBot site file for a store watched only from outside, for healthbot-site. Copy it into the
+# directory HB_CONFIG_DIR names and set the store's own address there, never in this repository.
+base_url: https://shop.example.test/
+search_term: "yoga bag"
+
+canary_urls:
+    - gear.html
+    - checkout/cart
+    - customer/account/login/
+    - sales/guest/form

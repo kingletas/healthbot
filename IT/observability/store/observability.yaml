@@ -1,0 +1,16 @@
+# Added to the observability stack when it watches a store:
+#
+#     docker compose -f docker-compose.yml -f store/observability.yaml up -d
+#
+# Prometheus joins the store's network to reach the exporters and the two services that serve their
+# own metrics, and reads the store's scrape jobs from store/scrape.yml.
+services:
+    prometheus:
+        volumes:
+            - ./store/scrape.yml:/etc/prometheus/scrape.d/store.yml:ro
+        networks: [default, store]
+
+networks:
+    store:
+        external: true
+        name: ${STORE_PROJECT:?set STORE_PROJECT to the store's compose project}_default
