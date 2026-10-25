@@ -6,6 +6,12 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ### Added
 
+- **`healthbot-site`, a run for a store seen only from outside.** It walks
+  the checkout and sweeps the canary URLs, with no AWS, New Relic or Google
+  Analytics, and emits only the checkout, canary and monitor SLIs; the
+  latency SLIs get no event rather than a bad one. It notifies nobody, so
+  alerts on it come from the Prometheus rules. The full `healthbot` run is
+  unchanged.
 - **A host-pressure SLO, two alerts, and a Slack bridge**. Any
   exporter that speaks the interface `IT/observability/prometheus/rules/host-pressure.yml`
   documents (`host_psi_pct`, `host_mem_available_pct`, `host_load1`,

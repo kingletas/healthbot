@@ -32,6 +32,15 @@ Alert thresholds live in `healthbot/config/site.yml`, currently `active_users_al
 
 A standing alert backs off rather than repeating: 15 minutes, then 30, then hourly, so an outage lasting an afternoon doesn't send fifty identical messages. A change in *what* is failing always speaks immediately, recovery needs two consecutive clean runs before it counts, and a gate that can't read its own state sends rather than suppressing.
 
+## A store seen only from outside
+
+`healthbot-site` is a run for a store with no AWS account, New Relic or Google Analytics behind it, such as a showcase on one machine. It walks the checkout in a browser and sweeps the canary URLs, and emits only the SLIs it can judge (checkout, canary and its own completion) as telemetry; the latency SLIs get no event at all rather than a bad one. It notifies nobody: alerts on those SLIs come from the Prometheus rules. Point `HB_CONFIG_DIR` at a directory holding the store's `site.yml`, and keep a real store's addresses out of this repository.
+
+```bash
+HB_CONFIG_DIR=~/.config/healthbot/shop HB_OTEL_ENABLED=1 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
+    HB_OTEL_INSTANCE_ID=shop uv run healthbot-site
+```
+
 ## How HealthBot is laid out
 
 ```text
