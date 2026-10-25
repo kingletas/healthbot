@@ -1,0 +1,80 @@
+# Exporters for one store's own services, beside the store and on its network, for the observability
+# stack's Prometheus to scrape. Nothing here publishes a port: Prometheus joins the store's network
+# through observability.yaml and asks each exporter by name.
+#
+#     cp .env.example .env    # then set the store's project name and the my.cnf path
+#     docker compose up -d
+#
+# PHP-FPM and RabbitMQ have no exporter here, because each serves its own metrics: FPM's pool status
+# as OpenMetrics on the store's internal nginx port, and RabbitMQ's rabbitmq_prometheus plugin on 15692.
+# Every image is pinned and every container capped, so a store under load is never short of a CPU
+# because of what watches it.
+name: healthbot-store-exporters
+
+services:
+    # Reads the server's status and performance_schema with a login that can read none of the store's
+    # tables (Kapelos makes it with `kapelos db exporter-user`). The my.cnf is readable only by its
+    # owner, so the container runs as that owner.
+    mysqld-exporter:
+        image: prom/mysqld-exporter:v0.16.0
+        command: ["--config.my-cnf=/etc/exporter/my.cnf"]
+        user: "${HOST_UID:?set HOST_UID to the uid that owns the my.cnf}"
+        volumes:
+            - ${EXPORTER_MY_CNF:?set EXPORTER_MY_CNF to the store's exporter.my.cnf}:/etc/exporter/my.cnf:ro
+        networks: [store]
+        mem_limit: 64m
+        cpus: 0.1
+        restart: unless-stopped
+
+    # One exporter for both Valkeys: Prometheus names the instance in each scrape (/scrape?target=...).
+    redis-exporter:
+        image: oliver006/redis_exporter:v1.62.0
+        networks: [store]
+        mem_limit: 64m
+        cpus: 0.1
+        restart: unless-stopped
+
+    # stub_status from nginx's internal server on 8081, which nothing outside the store's network reaches.
+    nginx-exporter:
+        image: nginx/nginx-prometheus-exporter:1.3.0
+        command: ["--nginx.scrape-uri=http://web:8081/nginx-status"]
+        networks: [store]
+        mem_limit: 32m
+        cpus: 0.05
+        restart: unless-stopped
+
+    # varnishstat reads Varnish's shared memory, so this one mounts the store's varnish-vsm volume
+    # read-only and needs no network to the store at all. That memory also holds Varnish's request log;
+    # this container only ever runs varnishstat, but anything else given the volume could read headers.
+    varnish-exporter:
+        build:
+            context: ./varnish-exporter
+            args:
+                VARNISH_IMAGE: ${VARNISH_IMAGE:-varnish:8.0}
+                EXPORTER_SHA256: ${VARNISH_EXPORTER_SHA256:?set VARNISH_EXPORTER_SHA256 from the release's checksum file}
+        volumes:
+            - varnish-vsm:/var/lib/varnish/varnishd:ro
+        networks: [store]
+        mem_limit: 64m
+        cpus: 0.1
+        restart: unless-stopped
+
+    # Not yet proved against OpenSearch, so it starts only when asked for: `--profile opensearch`.
+    elasticsearch-exporter:
+        image: prometheuscommunity/elasticsearch-exporter:v1.8.0
+        command: ["--es.uri=http://opensearch:9200"]
+        profiles: [opensearch]
+        networks: [store]
+        mem_limit: 64m
+        cpus: 0.1
+        restart: unless-stopped
+
+networks:
+    store:
+        external: true
+        name: ${STORE_PROJECT:?set STORE_PROJECT to the store's compose project}_default
+
+volumes:
+    varnish-vsm:
+        external: true
+        name: ${STORE_PROJECT}_varnish-vsm

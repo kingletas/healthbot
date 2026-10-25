@@ -1,0 +1,48 @@
+# One store's services, scraped over the store's own network. Every job carries the site label, so a
+# second store is a second file with its own.
+scrape_configs:
+    # PHP-FPM's pool status as OpenMetrics, served by nginx's internal server with fixed parameters.
+    - job_name: store-php-fpm
+      metrics_path: /fpm-status
+      static_configs:
+          - targets: ["web:8081"]
+            labels: { site: shop }
+
+    - job_name: store-rabbitmq
+      static_configs:
+          - targets: ["rabbitmq:15692"]
+            labels: { site: shop }
+
+    - job_name: store-nginx
+      static_configs:
+          - targets: ["nginx-exporter:9113"]
+            labels: { site: shop }
+
+    - job_name: store-mariadb
+      static_configs:
+          - targets: ["mysqld-exporter:9104"]
+            labels: { site: shop }
+
+    # One exporter, asked once per Valkey; each sample keeps the Valkey it came from as its instance.
+    - job_name: store-valkey
+      metrics_path: /scrape
+      static_configs:
+          - targets: ["redis://valkey-cache:6379", "redis://valkey-session:6379"]
+            labels: { site: shop }
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: redis-exporter:9121
+
+    - job_name: store-varnish
+      static_configs:
+          - targets: ["varnish-exporter:9131"]
+            labels: { site: shop }
+
+    - job_name: store-opensearch
+      static_configs:
+          - targets: ["elasticsearch-exporter:9114"]
+            labels: { site: shop }

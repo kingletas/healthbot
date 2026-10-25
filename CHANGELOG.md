@@ -6,6 +6,7 @@ Entries say what changed for somebody running HealthBot. The reasoning behind a 
 
 ### Added
 
+- **The observability stack can watch a store's own services.** `IT/observability/store/` is a compose project beside the store with capped, pinned exporters for MariaDB, Valkey, nginx, Varnish and OpenSearch. With `store/observability.yaml`, Prometheus joins the store's network and also scrapes PHP-FPM's and RabbitMQ's own metrics. Seven dashboards, one per service, are in the HealthBot folder. Nothing publishes a port. The OpenSearch exporter starts only with `--profile opensearch` until it is proved against OpenSearch, and the Varnish exporter builds only with its release checksum. `prometheus.yml` now also reads any scrape files mounted in `/etc/prometheus/scrape.d/`; with none, nothing changes.
 - **`healthbot-site`, a run for a store seen only from outside.** It walks
   the checkout and sweeps the canary URLs, with no AWS, New Relic or Google
   Analytics, and emits only the checkout, canary and monitor SLIs; the
