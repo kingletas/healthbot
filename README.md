@@ -191,4 +191,4 @@ Infrastructure: build the AMI under `IT/packer` by copying the tracked example f
 
 ## Who builds it
 
-HealthBot is Luis Tineo's project. Commits signed Ed, Irgola or Teresa come from AI agent sessions he runs, each with its own role. He directs the work, another session reviews every change before it merges, and nothing a session writes reaches GitHub until he pushes it.
+HealthBot is Luis Tineo's project. Commits signed Ed, Irgola or Teresa come from AI agent sessions he runs, each with its own role. He directs the work, another session reviews every change a session makes before it merges, and no commit a session makes reaches GitHub until he pushes it.
