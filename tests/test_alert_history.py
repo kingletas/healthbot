@@ -240,6 +240,22 @@ def test_the_report_names_what_it_counts_and_never_claims_more(
     assert "without action" not in out
 
 
+@pytest.mark.parametrize(
+    ("pages", "skipped", "said"),
+    [
+        (1, 1, ["2030-03: 1 page;", "1 line skipped"]),
+        (2, 2, ["2030-03: 2 pages;", "2 lines skipped"]),
+    ],
+)
+def test_a_count_of_one_reads_as_one(pages, skipped, said):
+    records = [
+        {"at": "2030-03-05T10:00:00+00:00", "event": "raised", "condition": "canary_ok"}
+    ] * pages
+    out = alert_history.report(alert_history.summarise(records), skipped)
+    for words in said:
+        assert words in out
+
+
 def test_a_line_that_is_not_a_record_is_counted_and_skipped(tmp_path, capsys, monkeypatch):
     path = tmp_path / "alert-history.jsonl"
     path.write_text(
