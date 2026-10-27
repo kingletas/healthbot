@@ -104,6 +104,19 @@ def test_a_history_that_cannot_be_written_never_changes_what_is_sent(tmp_path):
     assert run(cache, blocked, 5, ("is_checkout_up",)) is False
 
 
+@pytest.mark.parametrize("error", [ValueError("bad setting"), TypeError("not serialisable")])
+def test_any_failure_to_record_never_stops_the_page(monkeypatch, error):
+    def broken():
+        raise error
+
+    monkeypatch.setattr(alert_history, "history_file", broken)
+    cache = FakeCache()
+
+    gate = AlertGate(cache=cache, now=at(0))
+    assert gate.should_notify(("is_checkout_up",)) is True
+    assert cache.store[STATE_KEY]["condition"] == "is_checkout_up"
+
+
 def test_an_unreadable_state_store_still_sends_and_still_writes(history):
     broken = FakeCache(broken=True)
     assert run(broken, history, 0, ("is_checkout_up",)) is True

@@ -170,18 +170,26 @@ class AlertGate:
         self.history = history
 
     def record(self, event: str, state: dict, **extra) -> None:
-        """One line in the alert history for this decision, which outlives the state."""
-        alert_history.append(
-            {
-                "at": alert_history.stamp(self.now),
-                "event": event,
-                "condition": state["condition"],
-                "repeats": state.get("repeats", 0),
-                "clean_runs": state.get("clean_runs", 0),
-                **extra,
-            },
-            self.history,
-        )
+        """
+        One line in the alert history for this decision, which outlives the state.
+
+        This runs inside the decision to send, so nothing it raises may escape:
+        a history that cannot be written loses a line, never a page.
+        """
+        try:
+            alert_history.append(
+                {
+                    "at": alert_history.stamp(self.now),
+                    "event": event,
+                    "condition": state["condition"],
+                    "repeats": state.get("repeats", 0),
+                    "clean_runs": state.get("clean_runs", 0),
+                    **extra,
+                },
+                self.history,
+            )
+        except Exception as exc:
+            logger.warning(f"alerting: the {event!r} decision was not recorded: {exc!r}")
 
     def read_state(self) -> dict:
         state = self.cache.get(STATE_KEY)
