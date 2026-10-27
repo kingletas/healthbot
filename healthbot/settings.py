@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     mdp_ledger: str | None = None
     grafana_url: str = "http://localhost:3000"
     prometheus_url: str = "http://localhost:9090"
+    # The showcase repository the scoreboard's weekly snapshot is committed to,
+    # and who that commit is signed as, "Name <email>". No author, no commit.
+    snapshot_repo: str | None = None
+    snapshot_author: str | None = None
 
     # Local-stack seams. Each one redirects a single external dependency at
     # a stand-in (IT/local's Mattermost shim and API stubs, and MiniStack) and

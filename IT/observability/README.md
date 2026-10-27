@@ -66,6 +66,22 @@ healthbot-dora record resolve
 
 `healthbot-dora export --window-days 30` computes the four metrics and pushes them through the same OTLP pipeline. Run it from cron or a systemd timer.
 
+## The showcase scoreboard
+
+**Showcase scoreboard** is one dashboard for a stranger to read how the showcase is doing: the error budget left on each SLO, the four DORA metrics, every deploy of the week, and the ones that failed or were rolled back. It reads only series the tools already write. `SOURCES` in `healthbot/scoreboard.py` names each series, the tool that writes it and the file where it is written, and a test fails on a panel that reads anything else. Each panel's description says where its data comes from. A panel whose source is not built yet (load, reindexing, the game day) says so instead of drawing an empty graph.
+
+`healthbot-scoreboard snapshot` keeps a weekly record that outlives Prometheus's retention. It asks Grafana for the dashboard, each panel's data over the last seven days and the deploys in them. It writes them to `snapshots/scoreboard/YYYY-Www.json` in the repository `HB_SNAPSHOT_REPO` names, named for the ISO week the seven days start in, and commits that one file. The commit's author and committer are both `HB_SNAPSHOT_AUTHOR`, written as `Name <email>`. With no author set it writes and commits nothing, and says so. A second run in the same week replaces that week's file, and makes no commit if nothing changed.
+
+`systemd-user/` holds a user service and a timer that runs it on Monday mornings. The service reads `HB_SNAPSHOT_REPO`, `HB_SNAPSHOT_AUTHOR` and `HB_GRAFANA_URL` from `~/.config/healthbot/scoreboard.env`, and runs the console script from `~/.local/bin`. To install it:
+
+```bash
+systemctl --user link "$PWD/systemd-user/healthbot-scoreboard.service" "$PWD/systemd-user/healthbot-scoreboard.timer"
+```
+
+```bash
+systemctl --user enable --now healthbot-scoreboard.timer
+```
+
 ## SLOs
 
 Objectives live in `healthbot/config/slo.yml` and are emitted as the `healthbot_slo_target` gauge, so the Prometheus rules never hardcode a target. Burn-rate alerting is multi-window multi-burn-rate (SRE Workbook §5.5): **page** at 14.4× (1h + 5m), **ticket** at 6× (6h + 30m), plus `HealthBotSilent`, the dead-man's switch, when the heartbeat stops.

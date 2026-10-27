@@ -1,0 +1,389 @@
+{
+  "uid": "showcase-scoreboard",
+  "title": "Showcase scoreboard",
+  "description": "How the showcase is doing, on one screen, from what the tools already write: SLOs and the error budget, DORA, every deploy, and what is not built yet. Each panel says which tool and file its data comes from. A weekly snapshot is committed to the showcase repository by healthbot-scoreboard snapshot.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
+  "tags": [
+    "healthbot",
+    "showcase"
+  ],
+  "schemaVersion": 39,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "5m",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Error budget left per SLO (30-day window)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Written by HealthBot. Thirty-day compliance is the recording rule slo:healthbot_compliance:ratio_30d in IT/observability/prometheus/rules/slo.yml, and each objective is healthbot_slo_target, exported by healthbot/telemetry.py from config/slo.yml. One is the whole budget left, zero is spent, below zero is overspent.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 0.25
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "legendFormat": "{{description}}",
+          "expr": "1 - (1 - slo:healthbot_compliance:ratio_30d)\n  / on (slo) group_left (description)\n  clamp_min(1 - max by (slo, description) (healthbot_slo_target), 0.0001)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Deployment frequency",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Written by healthbot-dora export (healthbot/dora.py), exported as healthbot.dora.metric in healthbot/telemetry.py, over the DORA journal that healthbot-deploys dora fills from mdp's audit log.",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max(healthbot_dora_metric{metric=\"deployment_frequency_per_day\"})"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Lead time for changes",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Written by healthbot-dora export (healthbot/dora.py), exported as healthbot.dora.metric in healthbot/telemetry.py, over the DORA journal that healthbot-deploys dora fills from mdp's audit log.",
+      "gridPos": {
+        "x": 6,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max(healthbot_dora_metric{metric=\"lead_time_seconds\"})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Change failure rate",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Written by healthbot-dora export (healthbot/dora.py), exported as healthbot.dora.metric in healthbot/telemetry.py, over the DORA journal that healthbot-deploys dora fills from mdp's audit log.",
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max(healthbot_dora_metric{metric=\"change_failure_ratio\"})"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Failed deployment recovery time",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Written by healthbot-dora export (healthbot/dora.py), exported as healthbot.dora.metric in healthbot/telemetry.py, over the DORA journal that healthbot-deploys dora fills from mdp's audit log.",
+      "gridPos": {
+        "x": 18,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max(healthbot_dora_metric{metric=\"mttr_seconds\"})"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Deploys",
+      "type": "annolist",
+      "description": "Posted by healthbot-deploys annotate (healthbot/deploys.py) from mdp's audit log: each deploy's environment, outcome, duration, maintenance window and how long checkout took to get back to normal.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      },
+      "options": {
+        "onlyFromThisDashboard": false,
+        "onlyInTimeRange": true,
+        "tags": [
+          "deploy"
+        ],
+        "limit": 50,
+        "showUser": false,
+        "showTime": true,
+        "showTags": true,
+        "navigateToPanel": false,
+        "navigateBefore": "10m",
+        "navigateAfter": "10m"
+      }
+    },
+    {
+      "id": 7,
+      "title": "Deploys that failed",
+      "type": "annolist",
+      "description": "Posted by healthbot-deploys annotate (healthbot/deploys.py) from mdp's audit log: each deploy's environment, outcome, duration, maintenance window and how long checkout took to get back to normal. A postmortem draft for one comes from mdp's bin/audit-log postmortem (MDP-13).",
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 6,
+        "h": 8
+      },
+      "options": {
+        "onlyFromThisDashboard": false,
+        "onlyInTimeRange": true,
+        "tags": [
+          "outcome:failed"
+        ],
+        "limit": 50,
+        "showUser": false,
+        "showTime": true,
+        "showTags": true,
+        "navigateToPanel": false,
+        "navigateBefore": "10m",
+        "navigateAfter": "10m"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Deploys rolled back",
+      "type": "annolist",
+      "description": "Posted by healthbot-deploys annotate (healthbot/deploys.py) from mdp's audit log: each deploy's environment, outcome, duration, maintenance window and how long checkout took to get back to normal. A postmortem draft for one comes from mdp's bin/audit-log postmortem (MDP-13).",
+      "gridPos": {
+        "x": 18,
+        "y": 9,
+        "w": 6,
+        "h": 8
+      },
+      "options": {
+        "onlyFromThisDashboard": false,
+        "onlyInTimeRange": true,
+        "tags": [
+          "outcome:rolled_back"
+        ],
+        "limit": 50,
+        "showUser": false,
+        "showTime": true,
+        "showTags": true,
+        "navigateToPanel": false,
+        "navigateBefore": "10m",
+        "navigateAfter": "10m"
+      }
+    },
+    {
+      "id": 9,
+      "title": "Load at the normal-day mix",
+      "type": "text",
+      "description": "Waits on HBT-57: drexbot's results files are the source, and no series carries them yet.",
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 8,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Not built yet.** drexbot (DRX-8, DRX-9) writes each load run's p95 and errors to files in its own repository, and nothing turns them into a series this Grafana reads. HBT-57 does."
+      }
+    },
+    {
+      "id": 10,
+      "title": "Reindex, full against partial",
+      "type": "text",
+      "description": "Waits on KAP-15, the reindex comparison in the Kapelos store.",
+      "gridPos": {
+        "x": 8,
+        "y": 17,
+        "w": 8,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Not built yet.** The time and correctness of a full reindex against a partial one come from KAP-15, which is not built."
+      }
+    },
+    {
+      "id": 11,
+      "title": "Game day",
+      "type": "text",
+      "description": "Waits on KAP-33, the game day in the Kapelos store.",
+      "gridPos": {
+        "x": 16,
+        "y": 17,
+        "w": 8,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Not built yet.** The first game day and its postmortem come from KAP-33, which is not run yet."
+      }
+    }
+  ]
+}
