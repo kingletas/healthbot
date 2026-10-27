@@ -1,4 +1,25 @@
 {
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "uid": "host-pressure",
   "title": "Host Pressure",
   "description": "A host's headroom target: memory PSI some avg60 under 10% for 99% of minutes. host_psi_pct is a host-pressure exporter's own export, one sample at a time; host:psi_mem_some_avg60_compliance:ratio_30d is the rolling SLO compliance the Prometheus rules compute from it.",

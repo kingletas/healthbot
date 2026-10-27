@@ -2,6 +2,27 @@
   "uid": "store-valkey",
   "title": "Store: Valkey",
   "description": "Both Valkeys, the cache and the sessions, through one redis_exporter; the instance label says which.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

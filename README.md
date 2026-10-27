@@ -68,6 +68,10 @@ Objectives are declared in `healthbot/config/slo.yml` (checkout 99%, canary 99.5
 
 DORA metrics come from an append-only journal: `healthbot-dora record deploy|incident|resolve` (one line in the deploy path), `healthbot-dora export` to compute deployment frequency, lead time (joined to real git commit times), change-failure rate and MTTR. The journal is written wherever the deploy runs from, not on the deployed host, and it is the only copy of that history: back up `HB_DORA_EVENTS` or point it at something that is already backed up.
 
+Deploys made by mdp, magento-deploy-playbook, are read from its audit log by `healthbot-deploys`. `list` prints them; `annotate` posts each finished deploy to Grafana as a region annotation tagged `deploy`, which every provisioned dashboard shows, with its outcome, its maintenance window and how long checkout took to get back within 10% of its half hour before; `dora` adds each one to the DORA journal with its environment, and `healthbot-dora export --env showcase` counts only that environment. Both skip a deploy already sent, so they can run after every deploy or on a timer; an annotation waits up to two hours for checkout to settle. Set `HB_MDP_LEDGER`, and `HB_GRAFANA_URL` and `HB_PROMETHEUS_URL` when the stack is not on its default ports.
+
+A store watched from beside it (`IT/observability/store/`) also has two alerts of its own in `rules/store.yml`: `StorePhpFpmQueuing`, a page when requests have waited for a PHP worker for five minutes, and `StorePhpFpmUnseen`, a ticket when FPM's status has not answered for ten. Checkout down is the checkout SLO's fast burn. `make rules` tests each alert's quiet and loud paths with the stack's own promtool. Like the SLO alerts, they reach the null receiver until their thresholds are backtested.
+
 The full local stack (OTel Collector → Prometheus with its rules → Grafana with its provisioned dashboards) lives in `IT/observability/`, along with `healthbot-demo`, which drives the whole pipeline with synthetic runs through the production code path. See `IT/observability/README.md`.
 
 ## Running it locally, for real

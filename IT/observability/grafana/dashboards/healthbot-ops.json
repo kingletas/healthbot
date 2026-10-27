@@ -1,4 +1,25 @@
 {
+    "annotations": {
+        "list": [
+            {
+                "name": "Deploys",
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "iconColor": "blue",
+                "target": {
+                    "type": "tags",
+                    "tags": [
+                        "deploy"
+                    ],
+                    "matchAny": false,
+                    "limit": 500
+                }
+            }
+        ]
+    },
     "uid": "healthbot-ops",
     "title": "HealthBot Operations \u2014 the monitor itself",
     "tags": [

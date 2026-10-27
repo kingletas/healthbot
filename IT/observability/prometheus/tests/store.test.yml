@@ -1,0 +1,72 @@
+---
+# promtool test rules: each store alert's quiet path and loud path.
+rule_files:
+    - ../rules/store.yml
+evaluation_interval: 30s
+tests:
+    # Loud: a queue held for six minutes pages.
+    - interval: 30s
+      input_series:
+          - series: 'phpfpm_listen_queue{site="shop", job="store-php-fpm"}'
+            values: "3x12"
+      alert_rule_test:
+          - eval_time: 6m
+            alertname: StorePhpFpmQueuing
+            exp_alerts:
+                - exp_labels:
+                      severity: page
+                      site: shop
+                  exp_annotations:
+                      summary: "shop: requests have queued for a PHP worker for 5 minutes"
+                      description: "phpfpm_listen_queue has stayed above zero for 5 minutes, so every request waits for a worker before it starts. The pool is too small for the traffic, or workers are stuck: the PHP-FPM dashboard shows which."
+
+    # Quiet: a burst that drains in two minutes, then nothing queued.
+    - interval: 30s
+      input_series:
+          - series: 'phpfpm_listen_queue{site="shop", job="store-php-fpm"}'
+            values: "4 4 4 4 0x16"
+      alert_rule_test:
+          - eval_time: 2m
+            alertname: StorePhpFpmQueuing
+            exp_alerts: []
+          - eval_time: 8m
+            alertname: StorePhpFpmQueuing
+            exp_alerts: []
+
+    # Quiet: an idle store, nothing queued.
+    - interval: 30s
+      input_series:
+          - series: 'phpfpm_listen_queue{site="shop", job="store-php-fpm"}'
+            values: "0x20"
+      alert_rule_test:
+          - eval_time: 10m
+            alertname: StorePhpFpmQueuing
+            exp_alerts: []
+
+    # Loud: the status page down for eleven minutes is a ticket.
+    - interval: 1m
+      input_series:
+          - series: 'up{site="shop", job="store-php-fpm"}'
+            values: "0x12"
+      alert_rule_test:
+          - eval_time: 11m
+            alertname: StorePhpFpmUnseen
+            exp_alerts:
+                - exp_labels:
+                      severity: ticket
+                      site: shop
+                  exp_annotations:
+                      summary: "shop: PHP-FPM's status has not answered for 10 minutes"
+                      description: "Prometheus cannot read web:8081/fpm-status, so a queue building up would not be seen. The store may be fine; the watch on it is not."
+
+    # Quiet: a scrape missed now and then, and other jobs down.
+    - interval: 1m
+      input_series:
+          - series: 'up{site="shop", job="store-php-fpm"}'
+            values: "1 0 1 1 0 1x8"
+          - series: 'up{site="shop", job="store-rabbitmq"}'
+            values: "0x12"
+      alert_rule_test:
+          - eval_time: 11m
+            alertname: StorePhpFpmUnseen
+            exp_alerts: []

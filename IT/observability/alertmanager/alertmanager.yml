@@ -7,8 +7,9 @@
 #
 # Only the two host-pressure alerts (../prometheus/rules/host-pressure.yml)
 # are routed anywhere. Every other alert -- which today means HealthBot's own
-# burn-rate and dead-man's switch rules in ../prometheus/rules/slo.yml --
-# falls through to the null receiver on purpose: todos.md already says
+# burn-rate and dead-man's switch rules in ../prometheus/rules/slo.yml, and
+# the store's in ../prometheus/rules/store.yml -- falls through to the null
+# receiver on purpose: todos.md already says
 # routing those is blocked on 30 days of real telemetry to backtest the
 # thresholds against, and adding Alertmanager to this stack must not
 # silently start paging on unproven numbers. Widen the route when that

@@ -128,7 +128,17 @@ tf-local: ## Plan against the local AWS emulator: make tf-local ACTION=plan
 	@$(ROOT_DIR)/IT/terraform/tf-local.sh $(or $(ACTION),plan)
 
 .PHONY: check
-check: lint shell packaging tfstate test terraform tf-docs-check checkov packer ## Everything a commit has to pass
+# The rules are tested by the promtool of the Prometheus the stack runs, with no network.
+.PHONY: rules
+PROMETHEUS_IMAGE := $(shell sed -n 's/^ *image: \(prom\/prometheus:.*\)/\1/p' IT/observability/docker-compose.yml)
+
+rules: ## Check the Prometheus rules, and test each alert's quiet and loud paths
+	@docker run --rm --network none --memory 256m --cpus 1 -v "$(CURDIR)/IT/observability/prometheus:/p:ro" \
+		--entrypoint promtool $(PROMETHEUS_IMAGE) check rules /p/rules/slo.yml /p/rules/store.yml /p/rules/host-pressure.yml
+	@docker run --rm --network none --memory 256m --cpus 1 -v "$(CURDIR)/IT/observability/prometheus:/p:ro" \
+		--entrypoint promtool $(PROMETHEUS_IMAGE) test rules /p/tests/checkout.test.yml /p/tests/store.test.yml
+
+check: lint shell packaging tfstate test rules terraform tf-docs-check checkov packer ## Everything a commit has to pass
 
 # --- the local environment ---
 

@@ -2,6 +2,27 @@
   "uid": "store-php-fpm",
   "title": "Store: PHP-FPM",
   "description": "The pool's own status as OpenMetrics, from nginx's internal server. A listen queue above zero means requests waited for a free worker; max children reached means the pool hit pm.max_children.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

@@ -37,7 +37,12 @@ def events_file() -> str:
 
 
 def record_event(
-    kind: str, at: str | None = None, sha: str | None = None, status: str = "success"
+    kind: str,
+    at: str | None = None,
+    sha: str | None = None,
+    status: str = "success",
+    env: str | None = None,
+    release: str | None = None,
 ) -> dict:
     event = {
         "kind": kind,
@@ -45,6 +50,11 @@ def record_event(
         "sha": sha,
         "status": status,
     }
+    # Only when given, so a journal written before these existed reads the same.
+    if env is not None:
+        event["env"] = env
+    if release is not None:
+        event["release"] = release
     target = events_file()
     makedirs(path.dirname(target), exist_ok=True)
     with open(target, "a") as fp:
@@ -100,11 +110,17 @@ def _say_git_is_missing() -> None:
         logger.warning("git is not installed, so DORA lead time is left out")
 
 
-def compute_metrics(events: list, window_days: int, repo: str | None = None) -> dict:
+def compute_metrics(
+    events: list, window_days: int, repo: str | None = None, env: str | None = None
+) -> dict:
     """
     The four DORA metrics over the window. Absent data yields an absent key,
     never a fake zero: an empty journal is "no data", not "elite performer".
+    With `env`, only that environment's events count, so a showcase's deploys
+    never mix with real work's figures; an event with no env belongs to none.
     """
+    if env is not None:
+        events = [e for e in events if e.get("env") == env]
     deploys = [e for e in events if e["kind"] == "deploy"]
     metrics = {}
 
@@ -137,8 +153,8 @@ def compute_metrics(events: list, window_days: int, repo: str | None = None) -> 
     return metrics
 
 
-def export(window_days: int, repo: str | None = None) -> dict:
-    metrics = compute_metrics(load_events(window_days), window_days, repo=repo)
+def export(window_days: int, repo: str | None = None, env: str | None = None) -> dict:
+    metrics = compute_metrics(load_events(window_days), window_days, repo=repo, env=env)
     telemetry.setup_telemetry()
     telemetry.record_dora(metrics)
     telemetry.shutdown_telemetry()
@@ -158,6 +174,7 @@ def main() -> int:
     exporter = sub.add_parser("export", help="compute the window and emit via OTLP")
     exporter.add_argument("--window-days", type=int, default=30)
     exporter.add_argument("--repo", help="git repo for lead time (default HB_DORA_REPO or cwd)")
+    exporter.add_argument("--env", help="count only this environment's events")
 
     args = parser.parse_args()
     add_file_sink()
@@ -166,7 +183,7 @@ def main() -> int:
         event = record_event(args.kind, at=args.at, sha=args.sha, status=args.status)
         print(json.dumps(event))
     else:
-        metrics = export(args.window_days, repo=args.repo)
+        metrics = export(args.window_days, repo=args.repo, env=args.env)
         print(json.dumps(metrics, indent=2))
 
     return 0

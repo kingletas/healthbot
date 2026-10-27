@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # DORA event journal and the repo lead time is computed against
     dora_events: str = path.expanduser("~/.local/share/healthbot/dora-events.jsonl")
     dora_repo: str = "."
+    # mdp's audit log, which healthbot-deploys reads, and the local stack's
+    # Grafana and Prometheus it posts annotations to and reads checkout from
+    mdp_ledger: str | None = None
+    grafana_url: str = "http://localhost:3000"
+    prometheus_url: str = "http://localhost:9090"
 
     # Local-stack seams. Each one redirects a single external dependency at
     # a stand-in (IT/local's Mattermost shim and API stubs, and MiniStack) and
