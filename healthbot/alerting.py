@@ -28,6 +28,7 @@ import time
 from collections.abc import Callable
 from typing import NamedTuple
 
+from healthbot import alert_history
 from healthbot.cache import Cache
 
 # Local imports
@@ -161,9 +162,34 @@ def failing_signals(message_data: dict, thresholds: dict) -> tuple:
 class AlertGate:
     """Decides whether a bad run is worth telling anybody about again."""
 
-    def __init__(self, cache: Cache | None = None, now: float | None = None) -> None:
+    def __init__(
+        self, cache: Cache | None = None, now: float | None = None, history: str | None = None
+    ) -> None:
         self.cache = cache if cache is not None else Cache(db=ALERT_STATE_DB)
         self.now = now if now is not None else time.time()
+        self.history = history
+
+    def record(self, event: str, state: dict, **extra) -> None:
+        """
+        One line in the alert history for this decision, which outlives the state.
+
+        This runs inside the decision to send, so nothing it raises may escape:
+        a history that cannot be written loses a line, never a page.
+        """
+        try:
+            alert_history.append(
+                {
+                    "at": alert_history.stamp(self.now),
+                    "event": event,
+                    "condition": state["condition"],
+                    "repeats": state.get("repeats", 0),
+                    "clean_runs": state.get("clean_runs", 0),
+                    **extra,
+                },
+                self.history,
+            )
+        except Exception as exc:
+            logger.warning(f"alerting: the {event!r} decision was not recorded: {exc!r}")
 
     def read_state(self) -> dict:
         state = self.cache.get(STATE_KEY)
@@ -190,9 +216,16 @@ class AlertGate:
 
         if state.get("condition") != condition:
             logger.info(f"alerting: new condition {condition!r}")
-            self.write_state(
-                {"condition": condition, "sent_at": self.now, "repeats": 0, "clean_runs": 0}
-            )
+            fresh = {
+                "condition": condition,
+                "sent_at": self.now,
+                "raised_at": self.now,
+                "repeats": 0,
+                "clean_runs": 0,
+            }
+            self.write_state(fresh)
+            replaced = {"replaces": state["condition"]} if state.get("condition") else {}
+            self.record("raised", fresh, **replaced)
             return True
 
         due_in = BACKOFF_MINUTES[min(state.get("repeats", 0) + 1, len(BACKOFF_MINUTES) - 1)]
@@ -207,12 +240,14 @@ class AlertGate:
             # runs have to be consecutive or they prove nothing.
             state["clean_runs"] = 0
             self.write_state(state)
+            self.record("held", state, next_in_minutes=round(due_in - elapsed_minutes))
             return False
 
         state["sent_at"] = self.now
         state["repeats"] = state.get("repeats", 0) + 1
         state["clean_runs"] = 0
         self.write_state(state)
+        self.record("repeat", state)
         logger.info(f"alerting: {condition!r} still failing, repeat {state['repeats']}")
         return True
 
@@ -228,7 +263,16 @@ class AlertGate:
             )
             state["clean_runs"] = clean_runs
             self.write_state(state)
+            self.record("clean", state)
             return
 
         logger.info(f"alerting: {state['condition']!r} recovered")
         self.cache.delete(STATE_KEY)
+        # A state written before raised_at was kept started at its last send at the latest.
+        raised_at = state.get("raised_at", state.get("sent_at"))
+        state["clean_runs"] = clean_runs
+        self.record(
+            "recovered",
+            state,
+            **({"raised_at": alert_history.stamp(raised_at)} if raised_at is not None else {}),
+        )

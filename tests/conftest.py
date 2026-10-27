@@ -19,6 +19,7 @@ _STATE_DIR = tempfile.mkdtemp(prefix="healthbot-tests-")
 
 os.environ["HB_LOG_DIR"] = os.path.join(_STATE_DIR, "logs")
 os.environ["HB_DORA_EVENTS"] = os.path.join(_STATE_DIR, "dora-events.jsonl")
+os.environ["HB_ALERT_HISTORY"] = os.path.join(_STATE_DIR, "alert-history.jsonl")
 
 
 def pytest_sessionfinish(session, exitstatus):
