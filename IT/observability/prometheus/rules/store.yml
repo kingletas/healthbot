@@ -1,0 +1,41 @@
+---
+# The store's own harms, from the services watched beside it (store/, HBT-49).
+# Everything is recorded; only what predicts a shopper's harm alerts. Checkout
+# down is the checkout_availability SLO's fast burn in slo.yml, and an indexer
+# behind or cron stalled wait on the store exporting them (HBT-56).
+#
+# Each rule's quiet and loud paths are in ../tests/store.test.yml, run by
+# `make rules`.
+groups:
+    - name: store-alerts
+      rules:
+          # A request waiting for a PHP worker is a shopper waiting. A queue
+          # that drains within a scrape or two is normal under a burst; one
+          # that holds for five minutes means the pool is too small for the
+          # traffic, and checkout slows with everything else.
+          - alert: StorePhpFpmQueuing
+            expr: max by (site) (phpfpm_listen_queue) > 0
+            for: 5m
+            labels:
+                severity: page
+            annotations:
+                summary: "{{ $labels.site }}: requests have queued for a PHP worker for 5 minutes"
+                description: >-
+                    phpfpm_listen_queue has stayed above zero for 5 minutes,
+                    so every request waits for a worker before it starts.
+                    The pool is too small for the traffic, or workers are
+                    stuck: the PHP-FPM dashboard shows which.
+
+          # FPM's status page stopped answering, so the alert above can no
+          # longer fire. A ticket, not a page: the store itself may be fine.
+          - alert: StorePhpFpmUnseen
+            expr: max by (site) (up{job="store-php-fpm"}) == 0
+            for: 10m
+            labels:
+                severity: ticket
+            annotations:
+                summary: "{{ $labels.site }}: PHP-FPM's status has not answered for 10 minutes"
+                description: >-
+                    Prometheus cannot read web:8081/fpm-status, so a queue
+                    building up would not be seen. The store may be fine;
+                    the watch on it is not.

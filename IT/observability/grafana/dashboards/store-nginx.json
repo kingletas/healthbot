@@ -2,6 +2,27 @@
   "uid": "store-nginx",
   "title": "Store: nginx",
   "description": "stub_status from nginx's internal server on 8081, through nginx-prometheus-exporter.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

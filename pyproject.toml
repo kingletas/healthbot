@@ -33,6 +33,7 @@ dependencies = [
 healthbot = "healthbot.healthbot:main"
 healthbot-site = "healthbot.site_run:main"
 healthbot-dora = "healthbot.dora:main"
+healthbot-deploys = "healthbot.deploys:main"
 healthbot-demo = "healthbot.demo:main"
 healthbot-local = "healthbot.local_env:main"
 healthbot-alertmanager-bridge = "healthbot.notifications.alertmanager_bridge:main"

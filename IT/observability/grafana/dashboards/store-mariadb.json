@@ -2,6 +2,27 @@
   "uid": "store-mariadb",
   "title": "Store: MariaDB",
   "description": "The server's status through mysqld_exporter, with a login that can read none of the store's tables.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

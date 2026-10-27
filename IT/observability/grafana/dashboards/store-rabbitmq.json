@@ -2,6 +2,27 @@
   "uid": "store-rabbitmq",
   "title": "Store: RabbitMQ",
   "description": "RabbitMQ's own rabbitmq_prometheus plugin on 15692, totals across queues.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

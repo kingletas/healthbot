@@ -1,4 +1,25 @@
 {
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "uid": "healthbot-sre",
   "title": "HealthBot SRE \u2014 SLOs and checks",
   "tags": [

@@ -2,6 +2,27 @@
   "uid": "store-opensearch",
   "title": "Store: OpenSearch",
   "description": "Cluster health and search through elasticsearch_exporter. Not yet proved against OpenSearch; empty until it is started with --profile opensearch.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "store"

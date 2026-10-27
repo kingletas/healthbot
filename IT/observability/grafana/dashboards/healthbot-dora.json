@@ -2,6 +2,27 @@
   "uid": "healthbot-dora",
   "title": "HealthBot DORA",
   "description": "Four of DORA's five metrics as trends over time, with no performance tiers. Computed by healthbot-dora export from the deploy journal. Deployment rework rate is not collected.",
+  "annotations": {
+    "list": [
+      {
+        "name": "Deploys",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "blue",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "deploy"
+          ],
+          "matchAny": false,
+          "limit": 500
+        }
+      }
+    ]
+  },
   "tags": [
     "healthbot",
     "dora"

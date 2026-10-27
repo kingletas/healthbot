@@ -1,0 +1,47 @@
+---
+# promtool test rules: checkout down is the checkout_availability SLO's fast
+# burn (slo.yml). HealthBot runs every 5 minutes, one SLO event a run; the
+# counters are given a minute apart, a fifth of a run each, which is what a
+# rate over them reads.
+rule_files:
+    - ../rules/slo.yml
+evaluation_interval: 30s
+tests:
+    # Loud: an hour of good runs, then checkout fails every run.
+    - interval: 1m
+      input_series:
+          - series: 'healthbot_slo_events_total{slo="checkout_availability", result="good"}'
+            values: "0+0.2x60 12x30"
+          - series: 'healthbot_slo_events_total{slo="checkout_availability", result="bad"}'
+            values: "0x60 0.2+0.2x30"
+          - series: 'healthbot_slo_target{slo="checkout_availability"}'
+            values: "0.99x90"
+      alert_rule_test:
+          - eval_time: 85m
+            alertname: HealthBotSLOFastBurn
+            exp_alerts:
+                - exp_labels:
+                      severity: page
+                      slo: checkout_availability
+                  exp_annotations:
+                      summary: "checkout_availability is burning error budget 14.4x too fast"
+                      description: "At this rate the 30-day error budget for checkout_availability is gone in about 2 days. Confirmed by both the 1h and 5m windows."
+
+    # Quiet: one failed run in two hours, the rest good.
+    - interval: 1m
+      input_series:
+          - series: 'healthbot_slo_events_total{slo="checkout_availability", result="good"}'
+            values: "0+0.2x60 12+0.2x60"
+          - series: 'healthbot_slo_events_total{slo="checkout_availability", result="bad"}'
+            values: "0x60 1x60"
+          - series: 'healthbot_slo_target{slo="checkout_availability"}'
+            values: "0.99x120"
+      alert_rule_test:
+          # Both windows hold the failed run here: the 5m burn is far over
+          # 14.4 and the 1h burn under it, so the 1h window keeps it quiet.
+          - eval_time: 64m
+            alertname: HealthBotSLOFastBurn
+            exp_alerts: []
+          - eval_time: 115m
+            alertname: HealthBotSLOFastBurn
+            exp_alerts: []
