@@ -188,3 +188,7 @@ Infrastructure: build the AMI under `IT/packer` by copying the tracked example f
 ## CI
 
 `ci.yml` runs `make check`, the same gate you run locally, then builds the wheel and uploads it as an artifact. It needs no credentials: Terraform validates without a backend and Packer validates against the tracked example vars. If it passes on your machine, it passes on the runner.
+
+## Who builds it
+
+HealthBot is Luis Tineo's project. Commits signed Ed, Irgola or Teresa come from AI agent sessions he runs, each with its own role. He directs the work, another session reviews every change before it merges, and nothing a session writes reaches GitHub until he pushes it.
