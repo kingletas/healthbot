@@ -34,6 +34,9 @@ from healthbot.settings import get_settings
 UID = "showcase-scoreboard"
 WINDOW = timedelta(days=7)
 SNAPSHOTS = Path("snapshots") / "scoreboard"
+# What a snapshot keeps of each deploy annotation. Grafana also returns who
+# posted it (login, email, avatar), and a snapshot goes to a public repository.
+ANNOTATION_FIELDS = ("id", "time", "timeEnd", "tags", "text")
 
 # Each series the scoreboard may read: the tool that writes it, and the file,
 # relative to this repository, where its name is written.
@@ -154,7 +157,10 @@ def gather(grafana: str, now: datetime) -> dict:
         "to": end.isoformat(),
         "dashboard": dashboard,
         "data": data,
-        "deploys": held.json(),
+        "deploys": [
+            {field: note[field] for field in ANNOTATION_FIELDS if field in note}
+            for note in held.json()
+        ],
     }
 
 

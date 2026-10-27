@@ -78,8 +78,19 @@ class _Grafana:
     def get(self, url, params=None, timeout=None):
         self.asked.append(url)
         if url.endswith("/api/annotations"):
+            # As Grafana answers when a person is logged in: who posted it, beside the deploy.
             return _Response(
-                [{"id": 1, "tags": ["deploy", "outcome:finished"], "text": "Deploy r1"}]
+                [
+                    {
+                        "id": 1,
+                        "tags": ["deploy", "outcome:finished"],
+                        "text": "Deploy r1",
+                        "userId": 3,
+                        "login": "someone",
+                        "email": "someone@example.test",
+                        "avatarUrl": "/avatar/0123abcd",
+                    }
+                ]
             )
         return _Response({"dashboard": _board()})
 
@@ -144,7 +155,9 @@ def test_a_snapshot_holds_the_dashboard_each_panels_data_and_the_weeks_deploys(m
     assert held["dashboard"]["uid"] == "showcase-scoreboard"
     queried = {str(p["id"]) for p in _board()["panels"] if p.get("targets")}
     assert set(held["data"]) == queried
-    assert held["deploys"][0]["text"] == "Deploy r1"
+    assert held["deploys"] == [
+        {"id": 1, "tags": ["deploy", "outcome:finished"], "text": "Deploy r1"}
+    ]
     assert held["from"] == "2026-02-25T12:00:00+00:00"
 
 
