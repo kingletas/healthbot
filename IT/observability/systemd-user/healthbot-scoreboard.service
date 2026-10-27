@@ -1,0 +1,14 @@
+[Unit]
+Description=HealthBot scoreboard: commit this week's snapshot to the showcase repository
+After=network-online.target
+
+[Service]
+# One snapshot and one commit, then done.
+Type=oneshot
+# The console script where a user install of healthbot puts it.
+ExecStart=%h/.local/bin/healthbot-scoreboard snapshot
+# HB_SNAPSHOT_REPO, HB_SNAPSHOT_AUTHOR and HB_GRAFANA_URL. Without an author
+# the run commits nothing and says why.
+EnvironmentFile=-%h/.config/healthbot/scoreboard.env
+TimeoutStartSec=300
+SyslogIdentifier=healthbot-scoreboard

@@ -1,0 +1,11 @@
+[Unit]
+Description=HealthBot scoreboard, weekly
+
+[Timer]
+# Monday morning, so the snapshot holds the whole of the week before.
+OnCalendar=Mon *-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target
