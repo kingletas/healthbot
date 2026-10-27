@@ -49,6 +49,8 @@ class Settings(BaseSettings):
 
     # DORA event journal and the repo lead time is computed against
     dora_events: str = path.expanduser("~/.local/share/healthbot/dora-events.jsonl")
+    # Every decision the alert gate makes, kept after the gate's own state is gone
+    alert_history: str = path.expanduser("~/.local/share/healthbot/alert-history.jsonl")
     dora_repo: str = "."
     # mdp's audit log, which healthbot-deploys reads, and the local stack's
     # Grafana and Prometheus it posts annotations to and reads checkout from

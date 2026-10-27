@@ -32,6 +32,8 @@ Alert thresholds live in `healthbot/config/site.yml`, currently `active_users_al
 
 A standing alert backs off rather than repeating: 15 minutes, then 30, then hourly, so an outage lasting an afternoon doesn't send fifty identical messages. A change in *what* is failing always speaks immediately, recovery needs two consecutive clean runs before it counts, and a gate that can't read its own state sends rather than suppressing.
 
+Every decision the gate makes is also appended to an alert history, `HB_ALERT_HISTORY` (default `~/.local/share/healthbot/alert-history.jsonl`): raised, repeated, held back, a clean run toward recovery, recovered. The gate's own state is deleted when an alert clears, and this is what is left to count from. `healthbot-alert-history report` prints, per month, the pages sent, the median and longest time to clear, and how many alerts *cleared before their first repeat*. HealthBot never learns whether anybody acted on a page, so it never claims an alert cleared without action. A healthy run writes nothing, and a history it cannot write never changes what is sent. Nothing rebuilds the file: back it up, or point `HB_ALERT_HISTORY` at something that is already backed up.
+
 ## A store seen only from outside
 
 `healthbot-site` is a run for a store with no AWS account, New Relic or Google Analytics behind it, such as a showcase on one machine. It walks the checkout in a browser and sweeps the canary URLs, and emits only the SLIs it can judge (checkout, canary and its own completion) as telemetry; the latency SLIs get no event at all rather than a bad one. It notifies nobody: alerts on those SLIs come from the Prometheus rules. Point `HB_CONFIG_DIR` at a directory holding the store's `site.yml`, and keep a real store's addresses out of this repository.
@@ -88,7 +90,7 @@ Alerts land in Mattermost's `~town-square` at `http://localhost:8065`; chaos swi
 
 ## Runtime configuration
 
-All `HB_*` environment variables are validated by `healthbot/settings.py` (pydantic-settings): `HB_PARAM_PREFIX` (falls back to `site.yml`'s `secrets_namespace_prefix`), `HB_ENVIRONMENT`, `HB_OTEL_ENABLED`, `HB_OTEL_INSTANCE_ID`, `HB_DORA_EVENTS` and `HB_DORA_REPO`, plus the local-stack seams `HB_CONFIG_DIR`, `HB_NR_API_URL`, `HB_SLACK_API_URL` and `HB_GA_DISCOVERY_URL`, each a no-op when unset. On a deployed host they arrive via `/etc/healthbot.env`, templated by Ansible from `group_vars`. Run parameters come from SSM Parameter Store (plain values cached in Redis, sensitive ones never), and credentials from Secrets Manager, fetched fresh every run and never cached.
+All `HB_*` environment variables are validated by `healthbot/settings.py` (pydantic-settings): `HB_PARAM_PREFIX` (falls back to `site.yml`'s `secrets_namespace_prefix`), `HB_ENVIRONMENT`, `HB_OTEL_ENABLED`, `HB_OTEL_INSTANCE_ID`, `HB_DORA_EVENTS`, `HB_DORA_REPO` and `HB_ALERT_HISTORY`, plus the local-stack seams `HB_CONFIG_DIR`, `HB_NR_API_URL`, `HB_SLACK_API_URL` and `HB_GA_DISCOVERY_URL`, each a no-op when unset. On a deployed host they arrive via `/etc/healthbot.env`, templated by Ansible from `group_vars`. Run parameters come from SSM Parameter Store (plain values cached in Redis, sensitive ones never), and credentials from Secrets Manager, fetched fresh every run and never cached.
 
 The Secrets Manager blob carries `ga_property_id`: a GA4 property, numeric or `properties/<id>`. It replaced the Universal Analytics view id, which hasn't worked since Google withdrew that API in July 2024.
 
