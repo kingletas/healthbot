@@ -127,12 +127,16 @@ def summarise(records: list[dict]) -> dict:
     return dict(sorted(months.items()))
 
 
+def counted(number: int, noun: str) -> str:
+    return f"{number} {noun}" if number == 1 else f"{number} {noun}s"
+
+
 def report(months: dict, skipped: int) -> str:
     if not months:
         return "No alert history yet: nothing has been sent or held since it was first kept."
     out = []
     for key, this in months.items():
-        line = [f"{key}: {this['pages']} pages"]
+        line = [f"{key}: {counted(this['pages'], 'page')}"]
         if this["recovered"]:
             before = this["cleared_before_first_repeat"]
             share = round(100 * before / this["recovered"])
@@ -152,7 +156,7 @@ def report(months: dict, skipped: int) -> str:
             line.append(f"{this['replaced']} replaced by a different condition")
         out.append("; ".join(line))
     if skipped:
-        out.append(f"{skipped} lines skipped: not records this tool wrote")
+        out.append(f"{counted(skipped, 'line')} skipped: not records this tool wrote")
     return "\n".join(out)
 
 
