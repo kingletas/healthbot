@@ -88,10 +88,12 @@ service_names:
 # site.yml, so the deploy cannot disagree with them. HB_TAG_NAME,
 # HB_DB_IDENTIFIER, HB_SECRETS_NAME and HB_AWS_PROFILE used to sit in this
 # file, were read by nothing, and gave an operator four knobs that turned.
+#
+# HB_ENVIRONMENT is deliberately not here. It is stamped on telemetry as
+# deployment.environment, and the playbook reads it back from the host's own
+# /etc/healthbot.env, where cloud-init wrote the name Terraform built the host
+# for. A fixed value here put "Production" on every host a deploy touched.
 healthbot_env:
-    # Stamped on telemetry as deployment.environment. It does not select the
-    # fleet; the environment tag comes from Parameter Store.
-    HB_ENVIRONMENT: "Production"
     # How much the run says on the console, and so in journald. INFO keeps a
     # healthy run quiet; the log file keeps everything either way.
     HB_LOG_LEVEL: "INFO"

@@ -64,6 +64,17 @@ adds no forcing change beyond that drift.
 
 ### Fixed
 
+- **A deploy keeps the environment name the host was built with.** The
+  playbook replaced `/etc/healthbot.env` with a fixed `HB_ENVIRONMENT:
+  "Production"`, so every deployed host reported `deployment.environment=Production`
+  whichever environment Terraform built it for, and a stage host's runs and
+  failures landed among production's. The deploy now reads the name back from
+  the host's own file before it renders, and refuses, before writing, when the
+  file holds none. `HB_ENVIRONMENT` is no longer in `group_vars/all.yml`, and
+  `docs/on-aws.md` no longer tells you to set it there. **A host an earlier
+  deploy already overwrote holds `Production`, and the deploy will keep it:**
+  correct that line in `/etc/healthbot.env` by hand once, to the name Terraform
+  built the host for. Nothing does it for you.
 - **`healthbot-demo` starts on a host with no `git` installed.** It falls
   back to invented history as it says it does, instead of exiting at start.
   The DORA lead time on such a host logs that it cannot resolve a commit's
