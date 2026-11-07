@@ -393,12 +393,17 @@ created:
 ```yaml
 healthbot_env:
     HB_PARAM_PREFIX: "/healthbot-production-sm/manager/"
-    HB_ENVIRONMENT: "production"
     HB_LOG_LEVEL: "INFO"
     HB_LOG_DIR: "/var/log/healthbot"
     PLAYWRIGHT_BROWSERS_PATH: "/opt/ms-playwright"
     HB_OTEL_ENABLED: "0"
 ```
+
+`HB_ENVIRONMENT` is not set here. The deploy reads it back from the host's own
+`/etc/healthbot.env`, where cloud-init wrote the environment name Terraform
+built the host for, and refuses to deploy if the file holds none. A host an
+earlier deploy already overwrote holds `Production` there: correct that line by
+hand once, before the next deploy.
 
 `HB_PARAM_PREFIX` is the one to get exactly right: it is the Parameter Store
 path the run reads its four settings from, and Terraform derives it from your

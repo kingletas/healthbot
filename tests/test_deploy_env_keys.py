@@ -47,6 +47,38 @@ def test_every_first_boot_key_survives_a_deploy():
     assert dropped_keys(boot, rendered, asserted) == set()
 
 
+def tasks_named(playbook: list) -> list[str]:
+    """Every task name in the play, in the order the play runs them."""
+    return [task["name"] for play in playbook for task in play.get("tasks", [])]
+
+
+def test_the_environment_name_is_not_a_fixed_value_in_group_vars():
+    rendered = yaml.safe_load(GROUP_VARS.read_text())["healthbot_env"]
+
+    assert "HB_ENVIRONMENT" not in rendered
+
+
+def test_the_playbook_refuses_an_empty_environment_name():
+    playbook = yaml.safe_load(PLAYBOOK.read_text())
+    conditions = []
+    for play in playbook:
+        for task in play.get("tasks", []):
+            that = (task.get("ansible.builtin.assert") or {}).get("that", [])
+            conditions += [that] if isinstance(that, str) else that
+
+    assert "HB_ENVIRONMENT" in asserted_keys(playbook)
+    assert any("HB_ENVIRONMENT" in c and "length" in c for c in conditions)
+
+
+def test_the_environment_name_is_read_and_checked_before_the_file_is_written():
+    names = tasks_named(yaml.safe_load(PLAYBOOK.read_text()))
+    read = names.index("Read the environment name the host booted with")
+    refuse = names.index("Refuse to deploy without the environment name")
+    render = names.index("Render the environment file")
+
+    assert read < refuse < render
+
+
 def test_a_key_neither_rendered_nor_asserted_is_reported():
     hcl = 'content = <<EOF\nwrite_files:\n    HB_PARAM_PREFIX="/p/"\n    HB_NEW="x"\nEOF\n'
     playbook = [

@@ -113,6 +113,40 @@
                 healthbot_env carries no HB_PARAM_PREFIX, so every run would
                 read site.yml's prefix instead of the one Terraform created
 
+      # Terraform is the source of the environment name: cloud-init writes it
+      # at first boot, and the render below replaces that file, so it is read
+      # back before it goes. A host an earlier deploy already overwrote holds
+      # "Production" here, and carrying that forward keeps it: correct that
+      # line by hand once, to the name Terraform built the host for.
+      # failed_when is off so that a missing file reaches the refusal below
+      # with its own message instead of slurp's.
+      - name: Read the environment name the host booted with
+        ansible.builtin.slurp:
+            src: "/etc/{{ service_name | lower }}.env"
+        register: healthbot_booted_env
+        failed_when: false
+
+      - name: Carry the environment name into the rendered file
+        ansible.builtin.set_fact:
+            healthbot_env: >-
+                {{ healthbot_env | combine({'HB_ENVIRONMENT': healthbot_booted_environment}) }}
+        vars:
+            healthbot_booted_environment: >-
+                {{ (healthbot_booted_env.content | default('') | b64decode)
+                   | regex_findall('(?m)^HB_ENVIRONMENT="?([^"\r\n]*)"?\s*$')
+                   | last | default('') | trim }}
+        when: healthbot_booted_environment | length > 0
+
+      - name: Refuse to deploy without the environment name
+        ansible.builtin.assert:
+            that:
+                - "'HB_ENVIRONMENT' in healthbot_env"
+                - healthbot_env.HB_ENVIRONMENT | default('') | length > 0
+            fail_msg: >-
+                /etc/{{ service_name | lower }}.env holds no HB_ENVIRONMENT,
+                so there is no environment name to keep and the render would
+                stamp every host with a guess
+
       # Rendered from group_vars rather than copied from a committed file:
       # the env file is configuration, not a secret, and belongs in vars
       - name: Render the environment file
